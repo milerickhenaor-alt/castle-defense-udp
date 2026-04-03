@@ -1,13 +1,14 @@
 import pygame
-from view.renderer import PlayerView, EnemyView, CastleView
+from view.renderer.PlayerView import PlayerView
+from view.renderer.EnemyView import EnemyView
+from view.renderer.CastleView import CastleView
 
 class Renderer:
     def __init__(self, screen, selections):
         self.screen = screen
 
         self.player_views = [
-            PlayerView(selections["player"]),
-            PlayerView(selections["player"])
+        PlayerView(p) for p in selections["players"]
         ]
 
         self.enemy_view = EnemyView(selections["enemy"])
