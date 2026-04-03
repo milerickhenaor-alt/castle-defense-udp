@@ -1,0 +1,21 @@
+import pygame
+
+class CastleView:
+    def __init__(self, castle_type):
+        base = f"assets/images/castles/{castle_type}"
+
+        self.full = pygame.image.load(base + "/full.png")
+        self.damaged = pygame.image.load(base + "/damaged.png")
+        self.destroyed = pygame.image.load(base + "/destroyed.png")
+
+    def draw(self, screen, castle):
+        ratio = castle.health / castle.max_health
+
+        if ratio > 0.6:
+            img = self.full
+        elif ratio > 0.3:
+            img = self.damaged
+        else:
+            img = self.destroyed
+
+        screen.blit(img, (castle.x, castle.y))

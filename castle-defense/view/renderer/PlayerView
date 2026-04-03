@@ -1,0 +1,25 @@
+import pygame
+from view.renderer import  SpriteLoader
+
+class PlayerView:
+    def __init__(self, player_type):
+        base = f"assets/players/{player_type}"
+
+        self.walk = SpriteLoader.load_animation(base + "/walk")
+        self.attack = SpriteLoader.load_animation(base + "/attack")
+
+        self.projectile = pygame.image.load(base + "/projectile.png")
+
+        self.frame_index = 0
+        self.state = "walk"
+
+    def draw(self, screen, player):
+        if self.state == "walk":
+            frames = self.walk
+        else:
+            frames = self.attack
+
+        image = frames[self.frame_index]
+        screen.blit(image, (player.x, player.y))
+
+        self.frame_index = (self.frame_index + 1) % len(frames)
