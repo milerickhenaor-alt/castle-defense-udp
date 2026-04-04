@@ -1,155 +1,252 @@
 import pygame
 import os
-from utils.constants import *
 
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 class StartScreen:
     def __init__(self):
-        pygame.font.init()
-        self.font = pygame.font.SysFont(FONT_NAME, FONT_MEDIUM)
+        pygame.mixer.init()
 
-        # NOMBRES
+        # 🎨 COLORES
+        self.COLOR_CARD = (45, 52, 71)
+        self.COLOR_ACCENT = (255, 200, 50)
+        self.WHITE = (255, 255, 255)
+
+        # 🔤 FUENTES
+        self.font_title = pygame.font.SysFont("Arial", 42, bold=True)
+        self.font_name = pygame.font.SysFont("Arial", 24)
+
+        # 🎵 SONIDOS (MP3)
+        self.sound_move = pygame.mixer.Sound(os.path.join(BASE_PATH, "assets", "sounds", "move.mp3"))
+        self.sound_select = pygame.mixer.Sound(os.path.join(BASE_PATH, "assets", "sounds", "select.mp3"))
+
+        # 🖼️ FONDO
+        bg_path = os.path.join(BASE_PATH, "assets", "images", "background", "menu.png")
+        self.background = pygame.image.load(bg_path)
+        self.background = pygame.transform.scale(self.background, (1000, 600))
+
+        # 🎮 ESTADO
+        self.mode = "name"
         self.player1_name = ""
         self.player2_name = ""
         self.input_active = 1
 
-        self.mode = "name"
-
-        # PLAYERS
-        self.avatars = [
-            ("Fairies", "1"), ("Fairies", "2"), ("Fairies", "3"),
-            ("gentlemen", "1"), ("gentlemen", "2"), ("gentlemen", "3"),
-            ("Warrior", "1"), ("Warrior", "2"), ("Warrior", "3"),
-        ]
-
+        # 🎯 SELECCIONES
         self.avatar_index = 0
-        self.selected_players = []
-
-        self.avatar_images = []
-        for name, number in self.avatars:
-            path = os.path.join(BASE_PATH, "assets", "images", "players", f"{name}{number}.png")
-            img = pygame.image.load(path)
-            img = pygame.transform.scale(img, (80, 80))
-            self.avatar_images.append(img)
-
-        # 👹 TROLLS
-        self.trolls = ["1", "2", "3"]
         self.troll_index = 0
-        self.selected_enemy = None
-
-        self.troll_images = []
-        for i in self.trolls:
-            path = os.path.join(BASE_PATH, "assets", "images", "enemies", f"trolls{i}.png")
-            img = pygame.image.load(path)
-            img = pygame.transform.scale(img, (80, 80))
-            self.troll_images.append(img)
-
-        # 🏰 CASTILLOS
-        self.castles = ["1", "2", "3"]
         self.castle_index = 0
+
+        self.selected_players = []
+        self.selected_enemy = None
         self.selected_castle = None
 
-        self.castle_images = []
-        for i in self.castles:
-            path = os.path.join(BASE_PATH, "assets", "images", "castles", f"full{i}.png")
-            img = pygame.image.load(path)
-            img = pygame.transform.scale(img, (100, 100))
-            self.castle_images.append(img)
+        # 🧠 SCROLL CONTROLADO
+        self.scroll_offset = 0
+        self.card_width = 220
+        self.visible_cards = 4
 
+        # 🎭 DATOS
+        self.avatars = ["Fairy 1", "Fairy 2", "Fairy 3", "Gent 1", "Gent 2", "Gent 3", "War 1", "War 2", "War 3"]
+        self.trolls = ["Troll 1", "Troll 2", "Troll 3"]
+        self.castles = ["Castle 1", "Castle 2", "Castle 3"]
+
+        # 🖼️ IMÁGENES
+        self.avatar_images = self._load_images("players", [
+            "Fairies1.png","Fairies2.png","Fairies3.png",
+            "gentlemen1.png","gentlemen2.png","gentlemen3.png",
+            "Warrior1.png","Warrior2.png","Warrior3.png"
+        ], (140, 140))
+
+        self.troll_images = self._load_images("enemies", [
+            "trolls1.png","trolls2.png","trolls3.png"
+        ], (140, 140))
+
+        self.castle_images = self._load_images("castles", [
+            "full1.png","full2.png","full3.png"
+        ], (150, 120))
+
+
+    # ========================
+    # 🎮 EVENTOS
+    # ========================
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
 
             if self.mode == "name":
-                if self.input_active == 1:
-                    if event.key == pygame.K_RETURN:
+                if event.key == pygame.K_RETURN:
+                    if self.input_active == 1 and self.player1_name:
                         self.input_active = 2
-                    elif event.key == pygame.K_BACKSPACE:
+                    elif self.input_active == 2 and self.player2_name:
+                        self.mode = "players"
+                        self.sound_select.play()
+
+                elif event.key == pygame.K_BACKSPACE:
+                    if self.input_active == 1:
                         self.player1_name = self.player1_name[:-1]
                     else:
-                        self.player1_name += event.unicode
-
-                elif self.input_active == 2:
-                    if event.key == pygame.K_RETURN:
-                        self.mode = "players"
-                    elif event.key == pygame.K_BACKSPACE:
                         self.player2_name = self.player2_name[:-1]
-                    else:
-                        self.player2_name += event.unicode
+
+                else:
+                    if event.unicode.isalnum() or event.unicode == " ":
+                        if self.input_active == 1:
+                            self.player1_name += event.unicode
+                        else:
+                            self.player2_name += event.unicode
 
             elif self.mode == "players":
-                if event.key == pygame.K_LEFT:
-                    self.avatar_index = (self.avatar_index - 1) % len(self.avatars)
-
-                elif event.key == pygame.K_RIGHT:
-                    self.avatar_index = (self.avatar_index + 1) % len(self.avatars)
-
-                elif event.key == pygame.K_RETURN:
-                    selected = self.avatars[self.avatar_index]
-
-                    self.selected_players.append({
-                        "type": selected[0],
-                        "variant": selected[1]
-                    })
-
-                    if len(self.selected_players) == 2:
-                        self.mode = "enemy"
+                self._handle_selection(event, self.avatars, "enemy")
 
             elif self.mode == "enemy":
-                if event.key == pygame.K_LEFT:
-                    self.troll_index = (self.troll_index - 1) % len(self.trolls)
-
-                elif event.key == pygame.K_RIGHT:
-                    self.troll_index = (self.troll_index + 1) % len(self.trolls)
-
-                elif event.key == pygame.K_RETURN:
-                    self.selected_enemy = self.trolls[self.troll_index]
-                    self.mode = "castle"
+                self._handle_selection(event, self.trolls, "castle", enemy=True)
 
             elif self.mode == "castle":
-                if event.key == pygame.K_LEFT:
-                    self.castle_index = (self.castle_index - 1) % len(self.castles)
-
-                elif event.key == pygame.K_RIGHT:
-                    self.castle_index = (self.castle_index + 1) % len(self.castles)
-
-                elif event.key == pygame.K_RETURN:
-                    self.selected_castle = self.castles[self.castle_index]
+                finished = self._handle_selection(event, self.castles, None, castle=True)
+                if finished:
                     return True
 
         return False
 
+
+    def _handle_selection(self, event, data, next_mode, enemy=False, castle=False):
+
+        index_attr = "avatar_index" if not enemy and not castle else \
+                     "troll_index" if enemy else "castle_index"
+
+        current_index = getattr(self, index_attr)
+
+        use_scroll = not enemy and not castle
+
+        if event.key == pygame.K_LEFT:
+            if current_index > 0:
+                setattr(self, index_attr, current_index - 1)
+
+                if use_scroll:
+                    if (current_index - 1) < abs(self.scroll_offset // self.card_width):
+                        self.scroll_offset += self.card_width
+
+                self.sound_move.play()
+
+        elif event.key == pygame.K_RIGHT:
+            if current_index < len(data) - 1:
+                setattr(self, index_attr, current_index + 1)
+
+                if use_scroll:
+                    right_limit = abs(self.scroll_offset // self.card_width) + self.visible_cards - 1
+                    if (current_index + 1) > right_limit:
+                        self.scroll_offset -= self.card_width
+
+                self.sound_move.play()
+
+        elif event.key == pygame.K_RETURN:
+            self.sound_select.play()
+
+            if not enemy and not castle:
+                self.selected_players.append(self.avatars[self.avatar_index])
+                if len(self.selected_players) == 2:
+                    self.mode = next_mode
+
+            elif enemy:
+                self.selected_enemy = self.trolls[self.troll_index]
+                self.mode = next_mode
+
+            elif castle:
+                self.selected_castle = self.castles[self.castle_index]
+                return True
+
+
+    # ========================
+    # 🎨 RENDER
+    # ========================
     def draw(self, screen):
-        screen.fill(BLACK)
+        screen.blit(self.background, (0, 0))
 
         if self.mode == "name":
-            screen.blit(self.font.render(f"P1: {self.player1_name}", True, WHITE), (100, 200))
-            screen.blit(self.font.render(f"P2: {self.player2_name}", True, WHITE), (100, 250))
+            self._draw_title(screen, "REGISTRO DE GUERREROS")
+            self._draw_controls(screen, "Escribe nombre | ENTER continuar")
+            self._draw_input(screen, 250, f"P1: {self.player1_name}", self.input_active == 1)
+            self._draw_input(screen, 330, f"P2: {self.player2_name}", self.input_active == 2)
 
         elif self.mode == "players":
-            screen.blit(self.font.render(f"Players: {len(self.selected_players)}/2", True, YELLOW), (100, 150))
-
-            for i, img in enumerate(self.avatar_images):
-                x = 50 + i * 100
-                screen.blit(img, (x, 250))
-
-                if i == self.avatar_index:
-                    pygame.draw.rect(screen, YELLOW, (x, 250, 80, 80), 3)
+            self._draw_title(screen, f"SELECCIONA JUGADOR {len(self.selected_players)+1}")
+            self._draw_controls(screen, "← → mover | ENTER seleccionar")
+            self._draw_grid(screen, self.avatars, self.avatar_index, self.avatar_images)
 
         elif self.mode == "enemy":
-            for i, img in enumerate(self.troll_images):
-                x = 100 + i * 120
-                screen.blit(img, (x, 250))
-
-                if i == self.troll_index:
-                    pygame.draw.rect(screen, YELLOW, (x, 250, 80, 80), 3)
+            self._draw_title(screen, "ELIGE TU TROPA")
+            self._draw_controls(screen, "← → mover | ENTER seleccionar")
+            self._draw_grid(screen, self.trolls, self.troll_index, self.troll_images)
 
         elif self.mode == "castle":
-            for i, img in enumerate(self.castle_images):
-                x = 100 + i * 140
-                screen.blit(img, (x, 250))
+            self._draw_title(screen, "ELIGE CASTILLO")
+            self._draw_controls(screen, "← → mover | ENTER seleccionar")
+            self._draw_grid(screen, self.castles, self.castle_index, self.castle_images)
 
-                if i == self.castle_index:
-                    pygame.draw.rect(screen, YELLOW, (x, 250, 100, 100), 3)
 
-        pygame.display.flip()
+    def _draw_title(self, screen, text):
+        surf = self.font_title.render(text, True, self.COLOR_ACCENT)
+        screen.blit(surf, (screen.get_width()//2 - surf.get_width()//2, 80))
+
+
+    def _draw_controls(self, screen, text):
+        surf = self.font_name.render(text, True, (200, 200, 200))
+        screen.blit(surf, (screen.get_width()//2 - surf.get_width()//2, 140))
+
+
+    def _draw_input(self, screen, y, text, active):
+        color = self.COLOR_ACCENT if active else self.COLOR_CARD
+        pygame.draw.rect(screen, color, (300, y, 400, 50), 2, border_radius=10)
+        txt = self.font_name.render(text, True, self.WHITE)
+        screen.blit(txt, (320, y + 10))
+
+
+    def _draw_grid(self, screen, items, selected, images):
+
+        is_fixed = len(items) <= 3
+        start_x = 200 if is_fixed else 120 + self.scroll_offset
+
+        for i, item in enumerate(items):
+            x = start_x + i * self.card_width
+            y = 220
+
+            rect = pygame.Rect(x, y, 180, 160)
+
+            # sombra
+            pygame.draw.rect(screen, (0, 0, 0), rect.move(5, 5), border_radius=12)
+
+            pygame.draw.rect(screen, self.COLOR_CARD, rect, border_radius=12)
+
+            if i == selected:
+                pygame.draw.rect(screen, self.COLOR_ACCENT, rect, 3, border_radius=12)
+
+                glow = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                glow.fill((255, 255, 100, 40))
+                screen.blit(glow, rect.topleft)
+
+                img = pygame.transform.scale(images[i], (160, 160))
+            else:
+                img = images[i]
+
+            img_rect = img.get_rect(center=(x + 90, y + 70))
+            screen.blit(img, img_rect)
+
+            # TEXTO DEBAJO
+            txt = self.font_name.render(item, True, self.WHITE)
+            text_x = x + rect.width // 2 - txt.get_width() // 2
+            text_y = y + rect.height + 5
+            screen.blit(txt, (text_x, text_y))
+
+
+    # ========================
+    # 🖼️ CARGA IMÁGENES
+    # ========================
+    def _load_images(self, folder, files, size):
+        images = []
+        for file in files:
+            path = os.path.join(BASE_PATH, "assets", "images", folder, file)
+            try:
+                img = pygame.image.load(path)
+                img = pygame.transform.scale(img, size)
+                images.append(img)
+            except:
+                print("❌ Error cargando:", path)
+        return images
