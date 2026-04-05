@@ -11,7 +11,7 @@ def main():
     renderer = None
     network = None
 
-    # ⚠️ Ahora son 4 jugadores
+    #Son 4 jugadores
     jugadores = []
 
     running = True
