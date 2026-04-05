@@ -11,6 +11,9 @@ class UDPServer:
         self.sock.setblocking(False)
         self.sock.bind(self.address)
         self.is_running = True
+        self.clients = set()
+        self.ready_clients = set()
+        self.expected_players = 2  # Asumir 2 jugadores para este juego
 
     def receive(self):
         try:
@@ -19,11 +22,36 @@ class UDPServer:
             return None, None
 
         message = parse_message(data)
+        if message:
+            self.handle_message(message, addr)
         return message, addr
+
+    def handle_message(self, message, addr):
+        msg_type = message['type']
+        if msg_type == 'connect':
+            self.clients.add(addr)
+            # Enviar estado actual o algo, pero por ahora nada
+        elif msg_type == 'ready':
+            self.ready_clients.add(addr)
+            if len(self.ready_clients) == self.expected_players:
+                self.send_to_all('start_game', {})
+                self.ready_clients.clear()  # Reset para siguiente ronda si necesario
+        elif msg_type == 'screen_change':
+            # Retransmitir a todos los clientes
+            self.send_to_all_except('screen_change', message['payload'], addr)
 
     def send(self, message_type, payload, address):
         data = create_message(message_type, payload)
         self.sock.sendto(data, address)
+
+    def send_to_all(self, message_type, payload):
+        for client in self.clients:
+            self.send(message_type, payload, client)
+
+    def send_to_all_except(self, message_type, payload, exclude_addr):
+        for client in self.clients:
+            if client != exclude_addr:
+                self.send(message_type, payload, client)
 
     def close(self):
         self.is_running = False
