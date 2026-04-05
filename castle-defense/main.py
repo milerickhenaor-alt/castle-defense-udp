@@ -1,21 +1,45 @@
 import pygame
 from view.screens.StartScreen import StartScreen
-from view.screens.GameScreen import GameScreen # Asegúrate de que existan
+from view.screens.WaitingScreen import WaitingScreen
+from view.screens.GameScreen import GameScreen
 from view.screens.GameOverScreen import GameOverScreen
 
-pygame.init()
-screen = pygame.display.set_mode((1000, 600))
-clock = pygame.time.Clock() # <--- 1. Agrega un reloj
+from view.mock_game_state import DummyGameState, DummyNetwork
+from utils.selection_mapper import SelectionMapper
 
+pygame.init()
+
+screen = pygame.display.set_mode((1000, 600))
+pygame.display.set_caption("Castle Defense UDP")
+
+clock = pygame.time.Clock()
+
+# ========================
+# 🎮 ESTADOS
+# ========================
 state = "start"
+
+# ========================
+# 🖥️ SCREENS
+# ========================
 start_screen = StartScreen()
+waiting_screen = WaitingScreen(screen)
 game_screen = None
-game_over_screen = GameOverScreen() 
+game_over_screen = GameOverScreen()
+
+# ========================
+# 🧠 SIMULACIÓN
+# ========================
+game_state = DummyGameState()
+network = DummyNetwork()
 
 running = True
 
 while running:
-    # --- PROCESAMIENTO DE EVENTOS ---
+
+    # ========================
+    # 🎮 EVENTOS
+    # ========================
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -23,39 +47,60 @@ while running:
         if state == "start":
             finished = start_screen.handle_event(event)
             if finished:
-                selections = {
-                    "players": start_screen.selected_players,
-                    "enemy": start_screen.selected_enemy,
-                    "castle": start_screen.selected_castle,
-                    "names": [start_screen.player1_name, start_screen.player2_name]
-                }
-                game_screen = GameScreen(screen, selections)
-                state = "game"
+                state = "waiting"
 
-    # --- LÓGICA Y DIBUJO ---
-    # Limpiar pantalla siempre al inicio del frame
-    screen.fill((0, 0, 0)) 
+        elif state == "game":
+            # Aquí después irá el controller real
+            pass
+
+    # ========================
+    # 🧠 LÓGICA
+    # ========================
+    if state == "waiting":
+        waiting_screen.update()
+        network.update()
+
+        if network.connected:
+            # 🔥 AQUÍ USAMOS EL MAPPER (SOLID)
+            selections = {
+                "players": SelectionMapper.map_players(start_screen.selected_players),
+                "enemy": SelectionMapper.map_enemy(start_screen.selected_enemy),
+                "castle": SelectionMapper.map_castle(start_screen.selected_castle),
+                "names": [
+                    start_screen.player1_name,
+                    start_screen.player2_name
+                ]
+            }
+
+            game_screen = GameScreen(screen, selections)
+            state = "game"
+
+    elif state == "game":
+        game_state.update()
+
+        if game_state.game_over:
+            state = "game_over"
+
+    # ========================
+    # 🎨 RENDER
+    # ========================
+    screen.fill((0, 0, 0))
 
     if state == "start":
         start_screen.draw(screen)
 
-    elif state == "game":
-        # Simulación de estado de juego (Dummy)
-        class Dummy: pass
-        game_state = Dummy()
-        game_state.time_left = 50 
-        
-        game_screen.draw(screen) # <--- Asegúrate de llamar al draw de game_screen
-        game_screen.update(game_state)
+    elif state == "waiting":
+        waiting_screen.draw()
 
-        if game_state.time_left <= 0:
-            state = "game_over"
+    elif state == "game":
+        if game_screen:
+            game_screen.update(game_state)
+            game_screen.draw(screen)
 
     elif state == "game_over":
-        pass # game_over_screen.draw(screen, game_state)
+        game_over_screen.draw(screen, game_state)
 
-    # --- LO MÁS IMPORTANTE ---
-    pygame.display.flip() # <--- 2. Actualiza la pantalla completa
-    clock.tick(60)        # <--- 3. Limita a 60 FPS (evita pantalla negra por lag)
+    pygame.display.flip()
+    clock.tick(60)
 
 pygame.quit()

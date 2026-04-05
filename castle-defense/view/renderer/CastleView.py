@@ -1,31 +1,43 @@
 import os
 import pygame
-from view.renderer.SpriteLoader import SpriteLoader
 
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 class CastleView:
-    def __init__(self, castle_type):
+    def __init__(self, castle_data):
 
-        base = os.path.join(BASE_PATH, "assets", "images", "castles", f"castle{castle_type}")
+        variant = str(castle_data["variant"])  # 🔥 FIX
 
-        self.full =  [pygame.image.load(base + "/full.png")]
-        self.damaged = [pygame.image.load(base + "/damaged.png")]
-        self.destroyed =[pygame.image.load(base + "/destroyed.png")] 
+        base = os.path.join(
+            BASE_PATH,
+            "assets",
+            "images",
+            "castles",
+            f"castle{variant}"
+        )
 
-        self.frame_index = 0
-        self.state = "full"
+        self.full = self.load_image(base, "full.png")
+        self.damaged = self.load_image(base, "damaged.png")
+        self.destroyed = self.load_image(base, "destroyed.png")
+
+    def load_image(self, base, filename):
+        path = os.path.join(base, filename)
+
+        if not os.path.exists(path):
+            print(f"⚠️ No existe: {path}")
+            return None
+
+        return pygame.image.load(path).convert_alpha()
 
     def draw(self, screen, castle):
 
-        if self.state == "full":
-            frames = self.full
-        elif self.state == "damaged":
-            frames = self.damaged
+        # 🔥 USAR VIDA REAL (NO self.state)
+        if castle.health > 130:
+            image = self.full
+        elif castle.health > 60:
+            image = self.damaged
         else:
-            frames = self.destroyed
+            image = self.destroyed
 
-        image = frames[self.frame_index]
-        screen.blit(image, (castle.x, castle.y))
-
-        self.frame_index = (self.frame_index + 1) % len(frames)
+        if image:
+            screen.blit(image, (castle.x, castle.y))
