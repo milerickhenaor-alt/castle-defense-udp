@@ -10,6 +10,7 @@ class UDPClient:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setblocking(False)
         self.connected = False
+        self.pending_messages = []
 
     def send(self, message_type, payload):
         data = create_message(message_type, payload)
@@ -22,7 +23,20 @@ class UDPClient:
             return None, None
 
         message = parse_message(data)
+        if message:
+            self.pending_messages.append(message)
         return message, addr
+
+    def send_screen_change(self, screen_state):
+        self.send("screen_change", {"state": screen_state})
+
+    def send_ready(self):
+        self.send("ready", {})
+
+    def get_pending_messages(self):
+        messages = self.pending_messages[:]
+        self.pending_messages.clear()
+        return messages
 
     def close(self):
         self.sock.close()
