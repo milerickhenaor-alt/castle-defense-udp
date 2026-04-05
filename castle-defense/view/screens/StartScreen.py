@@ -4,7 +4,9 @@ import os
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 class StartScreen:
-    def __init__(self):
+    def __init__(self, screen):
+        self.screen = screen
+
         pygame.mixer.init()
 
         # 🎨 COLORES
@@ -16,7 +18,7 @@ class StartScreen:
         self.font_title = pygame.font.SysFont("Arial", 42, bold=True)
         self.font_name = pygame.font.SysFont("Arial", 24)
 
-        # 🎵 SONIDOS (MP3)
+        # 🎵 SONIDOS
         self.sound_move = pygame.mixer.Sound(os.path.join(BASE_PATH, "assets", "sounds", "move.mp3"))
         self.sound_select = pygame.mixer.Sound(os.path.join(BASE_PATH, "assets", "sounds", "select.mp3"))
 
@@ -40,7 +42,7 @@ class StartScreen:
         self.selected_enemy = None
         self.selected_castle = None
 
-        # 🧠 SCROLL CONTROLADO
+        # 🧠 SCROLL
         self.scroll_offset = 0
         self.card_width = 220
         self.visible_cards = 4
@@ -64,7 +66,6 @@ class StartScreen:
         self.castle_images = self._load_images("castles", [
             "full1.png","full2.png","full3.png"
         ], (150, 120))
-
 
     # ========================
     # 🎮 EVENTOS
@@ -106,14 +107,12 @@ class StartScreen:
 
         return False
 
-
     def _handle_selection(self, event, data, next_mode, enemy=False, castle=False):
 
         index_attr = "avatar_index" if not enemy and not castle else \
                      "troll_index" if enemy else "castle_index"
 
         current_index = getattr(self, index_attr)
-
         use_scroll = not enemy and not castle
 
         if event.key == pygame.K_LEFT:
@@ -153,53 +152,48 @@ class StartScreen:
                 self.selected_castle = self.castles[self.castle_index]
                 return True
 
-
     # ========================
     # 🎨 RENDER
     # ========================
-    def draw(self, screen):
-        screen.blit(self.background, (0, 0))
+    def draw(self):
+        self.screen.blit(self.background, (0, 0))
 
         if self.mode == "name":
-            self._draw_title(screen, "REGISTRO DE GUERREROS")
-            self._draw_controls(screen, "Escribe nombre | ENTER continuar")
-            self._draw_input(screen, 250, f"P1: {self.player1_name}", self.input_active == 1)
-            self._draw_input(screen, 330, f"P2: {self.player2_name}", self.input_active == 2)
+            self._draw_title("REGISTRO DE GUERREROS")
+            self._draw_controls("Escribe nombre | ENTER continuar")
+            self._draw_input(250, f"P1: {self.player1_name}", self.input_active == 1)
+            self._draw_input(330, f"P2: {self.player2_name}", self.input_active == 2)
 
         elif self.mode == "players":
-            self._draw_title(screen, f"SELECCIONA JUGADOR {len(self.selected_players)+1}")
-            self._draw_controls(screen, "← → mover | ENTER seleccionar")
-            self._draw_grid(screen, self.avatars, self.avatar_index, self.avatar_images)
+            self._draw_title(f"SELECCIONA JUGADOR {len(self.selected_players)+1}")
+            self._draw_controls("← → mover | ENTER seleccionar")
+            self._draw_grid(self.avatars, self.avatar_index, self.avatar_images)
 
         elif self.mode == "enemy":
-            self._draw_title(screen, "ELIGE TU TROPA")
-            self._draw_controls(screen, "← → mover | ENTER seleccionar")
-            self._draw_grid(screen, self.trolls, self.troll_index, self.troll_images)
+            self._draw_title("ELIGE TU TROPA")
+            self._draw_controls("← → mover | ENTER seleccionar")
+            self._draw_grid(self.trolls, self.troll_index, self.troll_images)
 
         elif self.mode == "castle":
-            self._draw_title(screen, "ELIGE CASTILLO")
-            self._draw_controls(screen, "← → mover | ENTER seleccionar")
-            self._draw_grid(screen, self.castles, self.castle_index, self.castle_images)
+            self._draw_title("ELIGE CASTILLO")
+            self._draw_controls("← → mover | ENTER seleccionar")
+            self._draw_grid(self.castles, self.castle_index, self.castle_images)
 
-
-    def _draw_title(self, screen, text):
+    def _draw_title(self, text):
         surf = self.font_title.render(text, True, self.COLOR_ACCENT)
-        screen.blit(surf, (screen.get_width()//2 - surf.get_width()//2, 80))
+        self.screen.blit(surf, (self.screen.get_width()//2 - surf.get_width()//2, 80))
 
-
-    def _draw_controls(self, screen, text):
+    def _draw_controls(self, text):
         surf = self.font_name.render(text, True, (200, 200, 200))
-        screen.blit(surf, (screen.get_width()//2 - surf.get_width()//2, 140))
+        self.screen.blit(surf, (self.screen.get_width()//2 - surf.get_width()//2, 140))
 
-
-    def _draw_input(self, screen, y, text, active):
+    def _draw_input(self, y, text, active):
         color = self.COLOR_ACCENT if active else self.COLOR_CARD
-        pygame.draw.rect(screen, color, (300, y, 400, 50), 2, border_radius=10)
+        pygame.draw.rect(self.screen, color, (300, y, 400, 50), 2, border_radius=10)
         txt = self.font_name.render(text, True, self.WHITE)
-        screen.blit(txt, (320, y + 10))
+        self.screen.blit(txt, (320, y + 10))
 
-
-    def _draw_grid(self, screen, items, selected, images):
+    def _draw_grid(self, items, selected, images):
 
         is_fixed = len(items) <= 3
         start_x = 200 if is_fixed else 120 + self.scroll_offset
@@ -210,31 +204,22 @@ class StartScreen:
 
             rect = pygame.Rect(x, y, 180, 160)
 
-            # sombra
-            pygame.draw.rect(screen, (0, 0, 0), rect.move(5, 5), border_radius=12)
-
-            pygame.draw.rect(screen, self.COLOR_CARD, rect, border_radius=12)
+            pygame.draw.rect(self.screen, (0, 0, 0), rect.move(5, 5), border_radius=12)
+            pygame.draw.rect(self.screen, self.COLOR_CARD, rect, border_radius=12)
 
             if i == selected:
-                pygame.draw.rect(screen, self.COLOR_ACCENT, rect, 3, border_radius=12)
-
-                glow = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-                glow.fill((255, 255, 100, 40))
-                screen.blit(glow, rect.topleft)
-
+                pygame.draw.rect(self.screen, self.COLOR_ACCENT, rect, 3, border_radius=12)
                 img = pygame.transform.scale(images[i], (160, 160))
             else:
                 img = images[i]
 
             img_rect = img.get_rect(center=(x + 90, y + 70))
-            screen.blit(img, img_rect)
+            self.screen.blit(img, img_rect)
 
-            # TEXTO DEBAJO
             txt = self.font_name.render(item, True, self.WHITE)
             text_x = x + rect.width // 2 - txt.get_width() // 2
             text_y = y + rect.height + 5
-            screen.blit(txt, (text_x, text_y))
-
+            self.screen.blit(txt, (text_x, text_y))
 
     # ========================
     # 🖼️ CARGA IMÁGENES

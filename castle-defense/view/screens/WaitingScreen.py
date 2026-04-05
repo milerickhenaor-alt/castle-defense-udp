@@ -4,26 +4,42 @@ class WaitingScreen:
     def __init__(self, screen):
         self.screen = screen
 
-        self.font_title = pygame.font.SysFont("Arial", 48, bold=True)
-        self.font_text = pygame.font.SysFont("Arial", 28)
+        pygame.font.init()
+        self.font = pygame.font.SysFont("Arial", 40, bold=True)
+        self.small_font = pygame.font.SysFont("Arial", 22)
 
         self.timer = 0
+        self.is_ready = False  # 🔥 IMPORTANTE (lo usa el main)
 
+    # =========================
+    # EVENTOS (aunque no haga nada)
+    # =========================
+    def handle_event(self, event):
+        pass
+
+    # =========================
+    # UPDATE (simulación conexión)
+    # =========================
     def update(self):
         self.timer += 1
 
-    def draw(self):
-        self.screen.fill((15, 20, 30))
+        # simula conexión después de 3 segundos (180 frames)
+        if self.timer > 180:
+            self.is_ready = True
 
-        # 🎯 Título
-        title = self.font_title.render("Esperando conexión", True, (255, 200, 50))
-        self.screen.blit(title, (self.screen.get_width()//2 - title.get_width()//2, 200))
+    # =========================
+    # DRAW
+    # =========================
+    def draw(self, screen):
+        screen.fill((15, 15, 30))
 
-        # 🔄 Animación de puntos
+        title = self.font.render("ESPERANDO AL OTRO JUGADOR...", True, (255, 255, 255))
+        info = self.small_font.render("Conectando...", True, (180, 180, 180))
+
+        # animación de puntos
         dots = "." * ((self.timer // 30) % 4)
-        dots_text = self.font_text.render(dots, True, (255, 255, 255))
-        self.screen.blit(dots_text, (self.screen.get_width()//2 + 150, 210))
+        dots_text = self.small_font.render(dots, True, (255, 200, 50))
 
-        # 💡 Info
-        info = self.font_text.render("Conectando con otro jugador...", True, (200, 200, 200))
-        self.screen.blit(info, (self.screen.get_width()//2 - info.get_width()//2, 300))
+        screen.blit(title, (screen.get_width()//2 - title.get_width()//2, 250))
+        screen.blit(info, (screen.get_width()//2 - info.get_width()//2, 320))
+        screen.blit(dots_text, (screen.get_width()//2 + 80, 320))

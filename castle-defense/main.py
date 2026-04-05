@@ -1,106 +1,144 @@
 import pygame
-from view.screens.StartScreen import StartScreen
-from view.screens.WaitingScreen import WaitingScreen
-from view.screens.GameScreen import GameScreen
-from view.screens.GameOverScreen import GameOverScreen
 
-from view.mock_game_state import DummyGameState, DummyNetwork
-from utils.selection_mapper import SelectionMapper
+# Screens
+from view.screens.StartScreen import StartScreen
+from view.screens.GameScreen import GameScreen
+from view.screens.WaitingScreen import WaitingScreen
+
+# Model real
+from model.player import Player
+from model.castle import Castle
+from model.game_state import GameState
+
 
 pygame.init()
-
 screen = pygame.display.set_mode((1000, 600))
-pygame.display.set_caption("Castle Defense UDP")
+pygame.display.set_caption("Castle Defense")
 
 clock = pygame.time.Clock()
 
-# ========================
-# 🎮 ESTADOS
-# ========================
-state = "start"
+# ─────────────────────────────
+# ESTADOS
+# ─────────────────────────────
+STATE_START = "start"
+STATE_WAITING = "waiting"
+STATE_GAME = "game"
 
-# ========================
-# 🖥️ SCREENS
-# ========================
-start_screen = StartScreen()
+state = STATE_START
+
+# ─────────────────────────────
+# SCREENS
+# ─────────────────────────────
+start_screen = StartScreen(screen)
 waiting_screen = WaitingScreen(screen)
 game_screen = None
-game_over_screen = GameOverScreen()
 
-# ========================
-# 🧠 SIMULACIÓN
-# ========================
-game_state = DummyGameState()
-network = DummyNetwork()
+# ─────────────────────────────
+# MODEL
+# ─────────────────────────────
+game_state = None
 
 running = True
 
 while running:
+    clock.tick(60)
 
-    # ========================
-    # 🎮 EVENTOS
-    # ========================
+    # ─────────────────────────────
+    # EVENTOS
+    # ─────────────────────────────
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-        if state == "start":
+        if state == STATE_START:
             finished = start_screen.handle_event(event)
             if finished:
-                state = "waiting"
+                state = STATE_WAITING
 
-        elif state == "game":
-            # Aquí después irá el controller real
-            pass
+        elif state == STATE_WAITING:
+            waiting_screen.handle_event(event)
 
-    # ========================
-    # 🧠 LÓGICA
-    # ========================
-    if state == "waiting":
+        elif state == STATE_GAME:
+            pass  # aquí irá el controller luego
+
+    # ─────────────────────────────
+    # LÓGICA
+    # ─────────────────────────────
+    if state == STATE_WAITING:
         waiting_screen.update()
-        network.update()
 
-        if network.connected:
-            # 🔥 AQUÍ USAMOS EL MAPPER (SOLID)
+        if waiting_screen.is_ready:
+
+            # 🔥 TRANSFORMAR SELECTIONS (MUY IMPORTANTE)
+            def parse_player(player_str):
+                # "Fairy 1" → {"type": "Fairies", "variant": "1"}
+                parts = player_str.split()
+                return {
+                    "type": parts[0] + "s",   # Fairy → Fairies
+                    "variant": parts[1]
+                }
+
             selections = {
-                "players": SelectionMapper.map_players(start_screen.selected_players),
-                "enemy": SelectionMapper.map_enemy(start_screen.selected_enemy),
-                "castle": SelectionMapper.map_castle(start_screen.selected_castle),
+                "players": [
+                    parse_player(start_screen.selected_players[0]),
+                    parse_player(start_screen.selected_players[1])
+                ],
+                "enemy": start_screen.selected_enemy.split()[1],   # "Troll 1" → "1"
+                "castle": start_screen.selected_castle.split()[1], # "Castle 1" → "1"
                 "names": [
                     start_screen.player1_name,
                     start_screen.player2_name
                 ]
             }
 
+            # ─────────────────────────────
+            # CREAR MODEL REAL
+            # ─────────────────────────────
+            players = [
+                Player(
+                    name=selections["names"][0],
+                    team="A",
+                    x=150,
+                    y=300
+                ),
+                Player(
+                    name=selections["names"][1],
+                    team="B",
+                    x=750,
+                    y=300
+                )
+            ]
+
+            castles = {
+                "A": Castle(team="A", x=50, y=250),
+                "B": Castle(team="B", x=900, y=250)
+            }
+
+            game_state = GameState(players, castles)
+
             game_screen = GameScreen(screen, selections)
-            state = "game"
 
-    elif state == "game":
+            state = STATE_GAME
+
+    elif state == STATE_GAME:
         game_state.update()
+        game_screen.update(game_state)
 
-        if game_state.game_over:
-            state = "game_over"
-
-    # ========================
-    # 🎨 RENDER
-    # ========================
+    # ─────────────────────────────
+    # DIBUJO
+    # ─────────────────────────────
     screen.fill((0, 0, 0))
 
-    if state == "start":
-        start_screen.draw(screen)
+    if state == STATE_START:
+        start_screen.draw()
 
-    elif state == "waiting":
-        waiting_screen.draw()
+    elif state == STATE_WAITING:
+        waiting_screen.draw(screen)  # 🔥 FIX
 
-    elif state == "game":
-        if game_screen:
-            game_screen.update(game_state)
-            game_screen.draw(screen)
-
-    elif state == "game_over":
-        game_over_screen.draw(screen, game_state)
+    elif state == STATE_GAME:
+        # ⚠️ IMPORTANTE: GameScreen ya dibuja internamente
+        game_screen.update(game_state)
 
     pygame.display.flip()
-    clock.tick(60)
 
 pygame.quit()

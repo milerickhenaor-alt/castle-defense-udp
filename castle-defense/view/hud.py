@@ -1,32 +1,40 @@
 import pygame
-from utils.constants import *
 
 class Hud:
-    def __init__(self):
+    def __init__(self, screen):
+        self.screen = screen
+
         pygame.font.init()
-        self.font_small = pygame.font.SysFont("Arial", 20)
-        self.font_medium = pygame.font.SysFont("Arial", 28)
+        self.font = pygame.font.SysFont("Arial", 20)
+        self.font_big = pygame.font.SysFont("Arial", 28, bold=True)
 
-    def draw_time(self, screen, time_left):
-        text = self.font_medium.render(f"Time: {int(time_left)}", True, WHITE)
-        screen.blit(text, (SCREEN_WIDTH // 2 - 60, 10))
+    def draw(self, game_state):
+        screen = self.screen
 
-    def draw_score(self, screen, score_left, score_right):
-        text_left = self.font_small.render(f"Team A: {score_left}", True, WHITE)
-        text_right = self.font_small.render(f"Team B: {score_right}", True, WHITE)
+        # 🔥 TIEMPO
+        time_left = int(game_state.remaining_time)
+        time_text = self.font_big.render(f"Time: {time_left}", True, (255, 255, 255))
+        screen.blit(time_text, (450, 10))
 
-        screen.blit(text_left, (10, 10))
-        screen.blit(text_right, (SCREEN_WIDTH - 150, 10))
+        # 🔥 VIDA CASTILLOS
+        castle_a = game_state.castles["A"]
+        castle_b = game_state.castles["B"]
 
-    def draw_players(self, screen, players):
-        y_offset = 40
+        self.draw_bar(50, 50, 300, 20, castle_a.hp_ratio, (0, 200, 0))
+        self.draw_bar(650, 50, 300, 20, castle_b.hp_ratio, (200, 0, 0))
 
-        for player in players:
-            text = self.font_small.render(player.name, True, WHITE)
-            screen.blit(text, (10, y_offset))
-            y_offset += 20
+        # 🔥 SCORES
+        score_a = sum(p.score for p in game_state.players.values() if p.team == "A")
+        score_b = sum(p.score for p in game_state.players.values() if p.team == "B")
 
-    def draw(self, screen, game_state):
-        self.draw_time(screen, game_state.time_left)
-        self.draw_score(screen, game_state.score_left, game_state.score_right)
-        self.draw_players(screen, game_state.players)
+        score_text = self.font_big.render(f"{score_a} - {score_b}", True, (255, 255, 255))
+        screen.blit(score_text, (480, 80))
+
+        # 🔥 NOMBRES DE JUGADORES ENCIMA
+        for player in game_state.players.values():
+            name_text = self.font.render(player.name, True, (255, 255, 0))
+            screen.blit(name_text, (player.x - 20, player.y - 40))
+
+    def draw_bar(self, x, y, width, height, ratio, color):
+        pygame.draw.rect(self.screen, (50, 50, 50), (x, y, width, height))
+        pygame.draw.rect(self.screen, color, (x, y, width * ratio, height))
