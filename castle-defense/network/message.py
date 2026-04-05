@@ -1,3 +1,4 @@
+
 import json
 from enum import Enum
 
@@ -10,6 +11,10 @@ class MessageType(str, Enum):
     SPAWN_ENEMY = "spawn_enemy"
     DAMAGE_CASTLE = "damage_castle"
     GAME_OVER = "game_over"
+    SCREEN_CHANGE = "screen_change"
+    READY = "ready"
+    START_GAME = "start_game"
+    WAIT_FOR_PLAYERS = "wait_for_players"
 
 
 def create_message(message_type, payload):
