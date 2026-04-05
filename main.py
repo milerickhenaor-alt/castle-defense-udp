@@ -1,11 +1,5 @@
-
 import pygame
 from controller.input_handler import procesar_input
-
-# IMPORTS DEL EQUIPO (ajústalos cuando existan)
-# from model.game_state import GameState
-# from view.renderer import Renderer
-# from network.udp_client import UDPClient
 
 def main():
     pygame.init()
@@ -16,29 +10,38 @@ def main():
     game_state = None
     renderer = None
     network = None
-    player = None
+
+    # ⚠️ Ahora son 4 jugadores
+    jugadores = []
 
     running = True
 
     while running:
-        clock.tick(60)  # 60 FPS
+        clock.tick(60)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        accion = procesar_input(player)
+        # INPUT
+        acciones = procesar_input(jugadores)
 
-        if accion == "disparar":
-            print("Disparo!")  # luego conectarás con game_state
+        # ACCIONES
+        for accion in acciones:
+            if accion["accion"] == "disparar":
+                print(f"Jugador {accion['jugador_id']} disparó en {accion['posicion']}")
 
+        # UPDATE
         if game_state:
             game_state.update()
 
+        # NETWORK
         if network:
-            network.send({"accion": accion})
+            for accion in acciones:
+                network.send(accion)
             data = network.receive()
 
+        # RENDER
         if renderer:
             renderer.draw(screen, game_state)
 
