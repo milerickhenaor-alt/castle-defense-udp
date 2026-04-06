@@ -6,7 +6,7 @@ BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 class CastleView:
     def __init__(self, castle_data):
 
-        variant = str(castle_data["variant"])  # 🔥 FIX
+        variant = str(castle_data["variant"])
 
         base = os.path.join(
             BASE_PATH,
@@ -31,13 +31,18 @@ class CastleView:
 
     def draw(self, screen, castle):
 
-        # 🔥 USAR VIDA REAL (NO self.state)
-        if castle.health > 130:
+        if castle.hp > 130:
             image = self.full
-        elif castle.health > 60:
+        elif castle.hp > 60:
             image = self.damaged
-        else:
+        elif castle.hp == 0:
             image = self.destroyed
 
         if image:
-            screen.blit(image, (castle.x, castle.y))
+            img = pygame.transform.scale(image, (230, 230))
+
+        
+            if castle.team == "A":
+                img = pygame.transform.flip(img, True, False)
+
+            screen.blit(img, (castle.x, castle.y))

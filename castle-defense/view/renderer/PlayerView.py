@@ -1,4 +1,5 @@
 import os
+import pygame
 from view.renderer.SpriteLoader import SpriteLoader
 
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -25,7 +26,7 @@ class PlayerView:
         elif tipo == "Gent":
             folder = "Gentlemen"
         elif tipo == "War":
-            folder = "Warriors"
+            folder = "Warrior"
         else:
             folder = tipo
 
@@ -43,15 +44,40 @@ class PlayerView:
         self.walk = SpriteLoader.load_animation(os.path.join(base, "walk"))
         self.idle = SpriteLoader.load_animation(os.path.join(base, "idle"))
 
+        # 🔥 ESTADO ACTUAL
         self.frame_index = 0
-        self.image = self.idle[0] if self.idle else None
+        self.image = None
 
+        # 🔥 VELOCIDAD DE ANIMACIÓN
+        self.animation_speed = 0.2
+
+    # ------------------------------------------------------------------
+    # 🔥 UPDATE (YA NO RECIBE player)
+    # ------------------------------------------------------------------
     def update(self):
-        if self.walk:
-            self.frame_index = (self.frame_index + 0.2) % len(self.walk)
-            self.image = self.walk[int(self.frame_index)]
+        animation = self.walk if self.walk else self.idle
 
-    def draw(self, screen, x, y):
-        if self.image:
-            rect = self.image.get_rect(center=(x, y))
-            screen.blit(self.image, rect)
+        if animation:
+            self.frame_index = (self.frame_index + self.animation_speed) % len(animation)
+            self.image = animation[int(self.frame_index)]
+
+    # ------------------------------------------------------------------
+    # 🔥 DRAW (USA DATOS DEL MODEL)
+    # ------------------------------------------------------------------
+    def draw(self, screen, x, y, team):
+
+        if not self.image:
+            return
+
+        image = self.image
+
+        # 🔥 VOLTEAR SEGÚN EQUIPO
+        if team == "B":
+            image = pygame.transform.flip(image, True, False)
+
+        # 🔥 ESCALAR PERSONAJE
+        image = pygame.transform.scale(image, (80, 80))
+
+        # 🔥 POSICIONAR
+        rect = image.get_rect(center=(x, y))
+        screen.blit(image, rect)

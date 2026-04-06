@@ -71,10 +71,10 @@ while running:
                 Player(selections["names"][0], "A", 150, 300),
                 Player(selections["names"][1], "B", 850, 300)
             ]
-
+         
             castles = {
-                "A": Castle("A", 50, 250),
-                "B": Castle("B", 900, 250)
+                "A": Castle("A", -70, 250),
+                "B": Castle("B", 840, 250)
             }
 
             game_state = GameState(players, castles)
