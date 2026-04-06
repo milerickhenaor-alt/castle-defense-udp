@@ -8,10 +8,14 @@ class Enemy(IDamageable, IMovable, ISerializable):
     """
     Troll — enemigo autónomo que avanza hacia el castillo contrario.
     """
-
+    # --- Campos Obligatorios (Sin default) ---
     team: str
     x: float
     y: float
+    
+    # --- Campos con Default ---
+    # 🔥 Agregamos 'type' para que la Factory pueda pasarlo sin error
+    type: str        = "Troll 1" 
     hp: int          = 100
     max_hp: int      = 100
     speed: float     = 0.3
@@ -21,10 +25,11 @@ class Enemy(IDamageable, IMovable, ISerializable):
     width: float     = 45
     height: float    = 45
     
-    # 🔥 NUEVO: Atributo de estado para controlar la animación (walking, attacking)
+    # Atributo de estado para controlar la animación (walking, attacking)
     state: str       = "walking" 
     
-    id: str          = field(default_factory=lambda: str(uuid.uuid4()))
+    # ID único para sincronización
+    id: str          = field(default_factory=lambda: str(uuid.uuid4())[:8])
 
     # ------------------------------------------------------------------ #
     #  IMovable — avance automático cada frame                            #
@@ -32,10 +37,9 @@ class Enemy(IDamageable, IMovable, ISerializable):
 
     def update(self) -> None:
         """
-        [IMovable] Mueve el troll en línea recta.
-        Nota: GameState detendrá este movimiento cuando llegue al castillo.
+        Mueve el troll en línea recta si su estado es 'walking'.
         """
-        if self.state == "walking": # Solo se mueve si está caminando
+        if self.state == "walking" and self.active:
             if self.team == "A":
                 self.x += self.speed
             else:
@@ -61,52 +65,42 @@ class Enemy(IDamageable, IMovable, ISerializable):
         return self.hp / self.max_hp if self.max_hp > 0 else 0.0
 
     # ------------------------------------------------------------------ #
-    #  Colisión con castillo                                               #
-    # ------------------------------------------------------------------ #
-
-    def has_reached_castle(self, castle_x: float, castle_width: float) -> bool:
-        """
-        Determina si el troll está lo suficientemente cerca para golpear.
-        """
-        margen_ataque = 5 # Pixeles de distancia para empezar a golpear
-        if self.team == "A":
-            return (self.x + self.width) >= (castle_x - margen_ataque)
-        else:
-            return self.x <= (castle_x + castle_width + margen_ataque)
-
-    # ------------------------------------------------------------------ #
     #  ISerializable — sincronización UDP                                 #
     # ------------------------------------------------------------------ #
 
     def to_dict(self) -> dict:
-        """Agregamos 'state' al diccionario para que la red lo sincronice."""
         return {
-            "id":      self.id,
-            "team":    self.team,
-            "x":       self.x,
-            "y":       self.y,
-            "hp":      self.hp,
-            "max_hp":  self.max_hp,
-            "speed":   self.speed,
-            "damage":  self.damage,
-            "active":  self.active,
-            "reward":  self.reward,
-            "state":   self.state, # 🔥 Sincronizar estado
+            "id":       self.id,
+            "team":     self.team,
+            "type":     self.type,   # 🔥 Sincronizar el tipo de Troll
+            "x":        self.x,
+            "y":        self.y,
+            "hp":       self.hp,
+            "max_hp":   self.max_hp,
+            "speed":    self.speed,
+            "damage":   self.damage,
+            "active":   self.active,
+            "reward":   self.reward,
+            "state":    self.state,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "Enemy":
+        # Extraemos el ID aparte porque no se pasa en el constructor de la dataclass 
+        # si queremos que se asigne el del diccionario.
         e = cls(
             team=data["team"],
             x=data["x"],
             y=data["y"],
+            type=data.get("type", "Troll 1"),
             hp=data.get("hp", 100),
             max_hp=data.get("max_hp", 100),
             speed=data.get("speed", 0.5),
             damage=data.get("damage", 50),
             active=data.get("active", True),
             reward=data.get("reward", 10),
-            state=data.get("state", "walking"), # 🔥 Cargar estado
+            state=data.get("state", "walking"),
         )
-        e.id = data.get("id", e.id)
+        if "id" in data:
+            e.id = data["id"]
         return e

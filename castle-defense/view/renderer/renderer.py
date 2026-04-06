@@ -8,11 +8,14 @@ BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 class Renderer:
     def __init__(self, screen, selections):
+        """
+        selections: Diccionario enviado desde el main con 'players', 'castle_a', etc.
+        """
         self.screen = screen
         
-        # --- 1. Fondo optimizado ---
-        bg_path = os.path.join(BASE_PATH, "assets", "images", "background", "Background.png")
+        # 1. Carga de Fondo
         try:
+            bg_path = os.path.join(BASE_PATH, "assets", "images", "background", "Background.png")
             self.background = pygame.image.load(bg_path).convert()
             self.background = pygame.transform.scale(self.background, (1000, 600))
         except Exception as e:
@@ -20,54 +23,73 @@ class Renderer:
             self.background = pygame.Surface((1000, 600))
             self.background.fill((30, 30, 30))
 
-        # --- 2. Vistas de Jugadores ---
-        # selections["players"] ahora es la lista de 4 objetos Player que mandamos desde el main
-        self.player_views = [PlayerView(p) for p in selections["players"]]
+        # 2. Vistas de Jugadores (Diccionario por nombre para Skins únicas)
+        # Se crean inicialmente con los datos del payload de inicio
+        self.player_views = {}
+        if "players" in selections:
+            for p in selections["players"]:
+                self.player_views[p.name] = PlayerView(p)
 
-        # --- 3. Vistas de Castillos dinámicas ---
-        # Tomamos las variantes reales enviadas por el servidor
+        # 3. Vistas de Castillos
         self.castle_views = {
-            "A": CastleView({"variant": selections.get("castle_a", "1")}),
-            "B": CastleView({"variant": selections.get("castle_b", "1")}),
+            "A": CastleView({"variant": str(selections.get("castle_a", "1"))}),
+            "B": CastleView({"variant": str(selections.get("castle_b", "1"))}),
         }
 
-        # --- 4. Vistas de Enemigos ---
+        # 4. Contenedor dinámico de Enemigos (Trolls)
         self.enemy_views = {}
 
     def render(self, game_state):
-        # 1. Dibujar Fondo
+        """
+        Dibuja el estado actual del juego enviado por el servidor o calculado localmente.
+        """
+        # --- Capa 0: Fondo ---
         self.screen.blit(self.background, (0, 0))
 
-        # 2. Dibujar Castillos
+        # --- Capa 1: Castillos ---
         for team, castle in game_state.castles.items():
             if team in self.castle_views:
                 self.castle_views[team].draw(self.screen, castle)
 
-        # 3. Dibujar Jugadores
-        # Usamos values() porque en GameState los jugadores suelen estar en un dict por nombre
-        for i, player in enumerate(game_state.players.values()):
-            if i < len(self.player_views):
-                view = self.player_views[i]
-                view.update()
-                view.draw(self.screen, player.x, player.y, player.team)
-
-        # 4. Dibujar Enemigos (Mantenemos tu lógica exacta)
-        alive_ids = set()
-        for enemy in game_state.enemies:
-            alive_ids.add(enemy.id)
+        # --- Capa 2: Jugadores (Sincronización por Nombre) ---
+        for player in game_state.players.values():
+            # Si aparece un jugador nuevo por red que no teníamos, creamos su vista
+            if player.name not in self.player_views:
+                print(f"Renderer: Creando vista nueva para {player.name}")
+                self.player_views[player.name] = PlayerView(player)
             
-            # Si no existe la vista para este ID, la creamos
+            view = self.player_views[player.name]
+            view.update() # Para animaciones internas (idle/walk)
+            # Dibujamos en las coordenadas que vienen del GameState (sincronizadas)
+            view.draw(self.screen, player.x, player.y, player.team)
+
+        # --- Capa 3: Enemigos (Sincronización por ID) ---
+        current_enemy_ids = set()
+        
+        for enemy in game_state.enemies:
+            current_enemy_ids.add(enemy.id)
+            
+            # Si el troll es nuevo, creamos su EnemyView (esto detecta si es Troll 1, 2 o 3)
             if enemy.id not in self.enemy_views:
                 self.enemy_views[enemy.id] = EnemyView(enemy)
             
             view = self.enemy_views[enemy.id]
-            
-            # FIX: Le pasamos el objeto 'enemy' para que sepa si atacar o caminar
-            view.update(enemy) 
+            view.update(enemy) # Sincroniza estado de animación
             view.draw(self.screen, enemy)
 
-        # 5. Limpieza de memoria (Enemigos que ya no están en el estado)
-        if len(self.enemy_views) > len(alive_ids):
+        # --- Capa 4: Limpieza de Memoria ---
+        # Si un troll murió o desapareció del game_state, eliminamos su vista
+        if len(self.enemy_views) > len(current_enemy_ids):
             self.enemy_views = {
-                eid: ev for eid, ev in self.enemy_views.items() if eid in alive_ids
+                eid: ev for eid, ev in self.enemy_views.items() 
+                if eid in current_enemy_ids
             }
+
+    def draw_ui(self, game_state):
+        """
+        Opcional: Si quieres dibujar el tiempo restante o scores aquí
+        """
+        # Ejemplo: Tiempo
+        font = pygame.font.SysFont("Arial", 24, bold=True)
+        timer_text = font.render(f"Tiempo: {int(game_state.remaining_time)}s", True, (255, 255, 255))
+        self.screen.blit(timer_text, (450, 20))
