@@ -1,45 +1,40 @@
 import pygame
+from network.udp_client import UDPClient
 
 class WaitingScreen:
     def __init__(self, screen):
         self.screen = screen
+        self.client = UDPClient()
 
-        pygame.font.init()
-        self.font = pygame.font.SysFont("Arial", 40, bold=True)
-        self.small_font = pygame.font.SysFont("Arial", 22)
+        self.font = pygame.font.SysFont("Arial", 30)
+        self.is_ready = False
 
-        self.timer = 0
-        self.is_ready = False  # 🔥 IMPORTANTE (lo usa el main)
+        self.sent_ready = False
 
-    # =========================
-    # EVENTOS (aunque no haga nada)
-    # =========================
+        # 🔥 CONECTARSE AL SERVER
+        self.client.send_connect()
+        print("🔌 Enviando CONNECT")
+
     def handle_event(self, event):
         pass
 
-    # =========================
-    # UPDATE (simulación conexión)
-    # =========================
     def update(self):
-        self.timer += 1
+        # enviar READY solo una vez
+        if not self.sent_ready:
+            print("📤 Enviando READY")
+            self.client.send_ready()
+            self.sent_ready = True
 
-        # simula conexión después de 3 segundos (180 frames)
-        if self.timer > 180:
-            self.is_ready = True
+        # recibir mensajes
+        message, _ = self.client.receive()
 
-    # =========================
-    # DRAW
-    # =========================
-    def draw(self, screen):
-        screen.fill((15, 15, 30))
+        if message:
+            if message["type"] == "start_game":
+                print("🎮 START GAME recibido")
+                self.is_ready = True
 
-        title = self.font.render("ESPERANDO AL OTRO JUGADOR...", True, (255, 255, 255))
-        info = self.small_font.render("Conectando...", True, (180, 180, 180))
+    def draw(self):
+        self.screen.fill((0, 0, 0))
 
-        # animación de puntos
-        dots = "." * ((self.timer // 30) % 4)
-        dots_text = self.small_font.render(dots, True, (255, 200, 50))
-
-        screen.blit(title, (screen.get_width()//2 - title.get_width()//2, 250))
-        screen.blit(info, (screen.get_width()//2 - info.get_width()//2, 320))
-        screen.blit(dots_text, (screen.get_width()//2 + 80, 320))
+        text = self.font.render("Esperando jugadores...", True, (255, 255, 255))
+        self.screen.blit(text, (300, 250))
