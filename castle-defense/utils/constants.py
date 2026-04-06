@@ -81,7 +81,7 @@ ANIMATION_SPEED = 0.15  # velocidad de animación
 # =========================
 SERVER_IP = "127.0.0.1"   # cambiar por IP real
 SERVER_PORT = 5000
-BUFFER_SIZE = 1024
+BUFFER_SIZE = 65535
 
 
 # =========================

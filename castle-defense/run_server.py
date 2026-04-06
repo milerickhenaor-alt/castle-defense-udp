@@ -7,4 +7,5 @@ print("🚀 Server corriendo... esperando jugadores")
 
 while True:
     server.receive()
-    time.sleep(0.01)
+    server.update()
+    time.sleep(0.016)  # ~60 FPS

@@ -1,25 +1,23 @@
 import pygame
 
-def procesar_input(player):
+def process_input_local(player, controles):
+    """
+    player: El objeto Player del modelo.
+    controles: Diccionario con {up, down, shoot}.
+    """
     keys = pygame.key.get_pressed()
     accion = None
+    old_y = player.y
 
-    if keys[pygame.K_w]:
+    # Movimiento Vertical
+    if keys[controles['up']] and player.y > 300:
         player.y -= 5
-    if keys[pygame.K_s]:
+    if keys[controles['down']] and player.y < 550:
         player.y += 5
-    if keys[pygame.K_a]:
-        player.x -= 5
-    if keys[pygame.K_d]:
-        player.x += 5
 
-    if keys[pygame.K_SPACE]:
-        accion = "disparar"
-
-    mouse_pos = pygame.mouse.get_pos()
-    click = pygame.mouse.get_pressed()
-
-    if click[0]:  # click izquierdo
+    # Acción de Disparo
+    if keys[controles['shoot']]:
         accion = "disparar"
         
-    return accion
+    se_movio = (player.y != old_y)
+    return accion, se_movio

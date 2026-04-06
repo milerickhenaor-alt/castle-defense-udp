@@ -1,7 +1,7 @@
 import socket
 import json
 from utils.constants import SERVER_IP, SERVER_PORT, BUFFER_SIZE
-from .message import parse_message
+from .message import *
 
 class UDPClient:
     def __init__(self, server_ip=SERVER_IP, server_port=SERVER_PORT, buffer_size=BUFFER_SIZE):
@@ -34,9 +34,19 @@ class UDPClient:
         """Envía nombres, tropa y castillo elegido"""
         self.send("ready", selections)
 
-    def send_update(self, move_data):
-        """Envía posición del jugador (name, x, y)"""
-        self.send("move", move_data)
+    # En udp_client.py (Agrega o actualiza este método)
+    def send_update(self, players_data_list):
+        """
+        Envia el estado de los jugadores locales.
+        players_data_list: [{'name': 'Fairy 1', 'x': 120, 'y': 400}, {...}]
+        """
+        payload = players_data_list
+        try:
+            # Usamos el tipo "update" que el servidor espera
+            message = create_message("update", payload)
+            self.sock.sendto(message, self.server_address)
+        except Exception as e:
+            print(f"Error en send_update: {e}")
 
     def receive(self):
         """
