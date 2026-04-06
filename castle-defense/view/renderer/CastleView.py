@@ -33,14 +33,13 @@ class CastleView:
 
         if castle.hp > 130:
             image = self.full
-        elif castle.hp > 60:
+        elif castle.hp > 75:
             image = self.damaged
-        elif castle.hp == 0:
+        else:
             image = self.destroyed
 
         if image:
             img = pygame.transform.scale(image, (230, 230))
-
         
             if castle.team == "A":
                 img = pygame.transform.flip(img, True, False)

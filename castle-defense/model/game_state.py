@@ -132,7 +132,7 @@ class GameState:
         # --- PUNTOS DE SALIDA (X) ---
         # Ajustado para que salgan justo donde terminan tus líneas negras cerca de los castillos
         PUNTO_SALIDA_IZQUIERDA = 177  # Fin de la línea negra del Castillo A
-        PUNTO_SALIDA_DERECHA = 835  # Inicio de la línea negra del Castillo B (ajustado a un mapa de ~1200)
+        PUNTO_SALIDA_DERECHA = 832  # Inicio de la línea negra del Castillo B (ajustado a un mapa de ~1200)
 
         try:
             self.enemies.append(EnemyFactory.create("A", PUNTO_SALIDA_IZQUIERDA, spawn_y, "normal"))
@@ -142,8 +142,7 @@ class GameState:
 
     def _update_movables(self) -> None:
         # --- LÍMITES DE ATAQUE (X) ---
-        # Estos son los "muros" donde se detienen a golpear
-        MURO_DERECHO = 835   # El equipo A se detiene aquí
+        MURO_DERECHO = 832   # El equipo A se detiene aquí
         MURO_IZQUIERDO = 177  # El equipo B se detiene aquí
         
         alive_enemies = []
@@ -152,19 +151,29 @@ class GameState:
                 continue
 
             if enemy.team == "A":
-                # El de la izquierda avanza hasta el muro del castillo B
                 llegó = enemy.x >= MURO_DERECHO
+                target_team = "B" # 🔥 Definimos el equipo objetivo
                 target_castle = self.castles["B"]
             else:
-                # El de la derecha avanza hasta el muro del castillo A
                 llegó = enemy.x <= MURO_IZQUIERDO
+                target_team = "A" # 🔥 Definimos el equipo objetivo
                 target_castle = self.castles["A"]
 
             if llegó:
                 enemy.speed = 0
                 enemy.state = "attacking"
-                # Daño constante al castillo
-                target_castle.take_damage(enemy.damage * 0.01)
+                
+                # Aplicamos el daño al objeto castillo
+                # 0.05 es un buen valor para que baje visiblemente pero no instantáneo
+                target_castle.take_damage(enemy.damage * 0.01) 
+                
+                # Notificamos al HUD
+                self._emit(EVENT_CASTLE_DAMAGED, {
+                    "castle": target_castle,
+                    "team": target_team,
+                    "current_hp": target_castle.hp,
+                    "max_hp": target_castle.max_hp
+                })
             else:
                 enemy.state = "walking"
                 enemy.update()
