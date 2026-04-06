@@ -2,25 +2,41 @@ import os
 import pygame
 from view.renderer.SpriteLoader import SpriteLoader
 
+# Buscamos la raíz del proyecto para las rutas de assets
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 class PlayerView:
     def __init__(self, player_data):
-
-        # 🔥 SOPORTA STRING O DICT
-        if isinstance(player_data, dict):
+        """
+        Soporta:
+        - Objeto Player (tiene atributo .name)
+        - Diccionario (tiene clave "name")
+        - String directo (ej: "Fairy 1")
+        """
+        # 1. EXTRAER EL NOMBRE SEGÚN EL TIPO DE DATO RECIBIDO
+        if hasattr(player_data, "name"):
+            # Si es el objeto Player del modelo
+            player_name = player_data.name
+        elif isinstance(player_data, dict):
+            # Si es un diccionario de selección
             player_name = player_data.get("name", "Fairy 1")
         else:
-            player_name = player_data
+            # Si es un string directo
+            player_name = str(player_data)
 
         self.player_name = player_name
 
-        # 🔥 EXTRAER TIPO Y NÚMERO
-        parts = player_name.split(" ")
-        tipo = parts[0]
-        numero = parts[1]
+        # 2. EXTRAER TIPO Y NÚMERO (Ej: "Fairy 1" -> ["Fairy", "1"])
+        try:
+            parts = player_name.split(" ")
+            tipo = parts[0]
+            numero = parts[1]
+        except (IndexError, AttributeError):
+            # Fallback en caso de nombre mal formateado
+            tipo = "Fairy"
+            numero = "1"
 
-        # 🔥 MAPEAR CARPETAS CORRECTAS
+        # 3. MAPEAR CARPETAS CORRECTAS SEGÚN TU ESTRUCTURA DE ASSETS
         if tipo == "Fairy":
             folder = "Fairies"
         elif tipo == "Gent":
@@ -30,7 +46,8 @@ class PlayerView:
         else:
             folder = tipo
 
-        # 🔥 RUTA BASE
+        # 4. CONSTRUIR RUTA BASE
+        # assets/images/players/Fairies/1/
         base = os.path.join(
             BASE_PATH,
             "assets",
@@ -40,44 +57,47 @@ class PlayerView:
             numero
         )
 
-        # 🔥 CARGAR ANIMACIONES
+        # 5. CARGAR ANIMACIONES USANDO EL SPRITELOADER
         self.walk = SpriteLoader.load_animation(os.path.join(base, "walk"))
         self.idle = SpriteLoader.load_animation(os.path.join(base, "idle"))
 
-        # 🔥 ESTADO ACTUAL
+        # 6. ESTADO DE LA ANIMACIÓN
         self.frame_index = 0
+        self.animation_speed = 0.2
         self.image = None
 
-        # 🔥 VELOCIDAD DE ANIMACIÓN
-        self.animation_speed = 0.2
-
-    # ------------------------------------------------------------------
-    # 🔥 UPDATE (YA NO RECIBE player)
-    # ------------------------------------------------------------------
     def update(self):
+        """
+        Actualiza el frame de la animación. 
+        Prioriza caminar, si no hay frames de caminar usa idle.
+        """
         animation = self.walk if self.walk else self.idle
 
-        if animation:
-            self.frame_index = (self.frame_index + self.animation_speed) % len(animation)
+        if animation and len(animation) > 0:
+            self.frame_index += self.animation_speed
+            if self.frame_index >= len(animation):
+                self.frame_index = 0
             self.image = animation[int(self.frame_index)]
 
-    # ------------------------------------------------------------------
-    # 🔥 DRAW (USA DATOS DEL MODEL)
-    # ------------------------------------------------------------------
     def draw(self, screen, x, y, team):
-
+        """
+        Dibuja el sprite en pantalla.
+        - team: 'A' o 'B' para voltear el sprite.
+        - x, y: coordenadas que vienen del modelo.
+        """
         if not self.image:
             return
 
-        image = self.image
+        # Copiamos la imagen actual para no alterar la original al transformar
+        image_to_draw = self.image
 
-        # 🔥 VOLTEAR SEGÚN EQUIPO
+        # VOLTEAR SEGÚN EQUIPO (Equipo B mira hacia la izquierda)
         if team == "B":
-            image = pygame.transform.flip(image, True, False)
+            image_to_draw = pygame.transform.flip(image_to_draw, True, False)
 
-        # 🔥 ESCALAR PERSONAJE
-        image = pygame.transform.scale(image, (80, 80))
+        # ESCALAR PERSONAJE (Ajustado a 80x80 para que quepa bien en el carril)
+        image_to_draw = pygame.transform.scale(image_to_draw, (80, 80))
 
-        # 🔥 POSICIONAR
-        rect = image.get_rect(center=(x, y))
-        screen.blit(image, rect)
+        # POSICIONAR CENTRADO EN LAS COORDENADAS
+        rect = image_to_draw.get_rect(center=(int(x), int(y)))
+        screen.blit(image_to_draw, rect)

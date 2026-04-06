@@ -119,30 +119,43 @@ class GameState:
 
     def _spawn_enemies(self) -> None:
         now = time.time()
-        if now - self._last_spawn_time < self.enemy_spawn_interval or len(self.enemies) >= self.max_enemies_on_screen:
+        if now - self._last_spawn_time < self.enemy_spawn_interval:
+            return
+
+        # Si ya hay demasiados enemigos, no sacamos más
+        if len(self.enemies) >= self.max_enemies_on_screen:
             return
 
         self._last_spawn_time = now
         
-        # --- RANGO DE CAMINO (Eje Y) ---
-        # Según tus líneas, el camino está entre la parte media y baja.
-        # Ajustamos para que salgan en ese "pasillo" verde.
-        spawn_y = random.randint(350, 450) 
-
-        # --- PUNTOS DE SALIDA (X) ---
-        # Ajustado para que salgan justo donde terminan tus líneas negras cerca de los castillos
-        PUNTO_SALIDA_IZQUIERDA = 177  # Fin de la línea negra del Castillo A
-        PUNTO_SALIDA_DERECHA = 832  # Inicio de la línea negra del Castillo B (ajustado a un mapa de ~1200)
+        # --- LÓGICA DE APARICIÓN ALEATORIA ---
+        # Decidimos al azar qué bando saca tropa (1: Izquierda, 2: Derecha, 3: Ambos)
+        opcion = random.randint(1, 3)
+        
+        # Coordenadas X fijas para tu pantalla de 1000px
+        X_IZQ = 180
+        X_DER = 820
 
         try:
-            self.enemies.append(EnemyFactory.create("A", PUNTO_SALIDA_IZQUIERDA, spawn_y, "normal"))
-            self.enemies.append(EnemyFactory.create("B", PUNTO_SALIDA_DERECHA, spawn_y, "normal"))
+            if opcion == 1 or opcion == 3:
+                # Spawn para Equipo A (Izquierda)
+                # Cada uno tiene su propia Y aleatoria
+                y_a = random.randint(380, 480)
+                self.enemies.append(EnemyFactory.create("A", X_IZQ, y_a, "normal"))
+            
+            if opcion == 2 or opcion == 3:
+                # Spawn para Equipo B (Derecha)
+                # Su Y es totalmente independiente de la del Equipo A
+                y_b = random.randint(300, 450)
+                self.enemies.append(EnemyFactory.create("B", X_DER, y_b, "normal"))
+                
+            print(f"Spawn realizado: Opción {opcion}")
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error en spawn: {e}")
 
     def _update_movables(self) -> None:
         # --- LÍMITES DE ATAQUE (X) ---
-        MURO_DERECHO = 832   # El equipo A se detiene aquí
+        MURO_DERECHO = 827  # El equipo A se detiene aquí
         MURO_IZQUIERDO = 177  # El equipo B se detiene aquí
         
         alive_enemies = []

@@ -52,8 +52,9 @@ class UDPClient:
         return message, addr
 
     # ✅ ESTE ES EL QUE TE FALTABA REALMENTE
-    def send_ready(self):
-        self.send("ready", {})
+    def send_ready(self, selections):
+        # Enviamos el nombre, tropa y castillo elegido al servidor
+        self.send("ready", selections)
 
     def close(self):
         self.sock.close()

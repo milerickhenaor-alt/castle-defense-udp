@@ -5,9 +5,10 @@ from view.hud import Hud
 class GameScreen:
     def __init__(self, screen, selections):
         self.screen = screen
+        # 'selections' ahora contiene la clave 'players'
         self.renderer = Renderer(screen, selections)
-        self.hud = Hud(screen)  
-
+        self.hud = Hud(screen)
+        
     def update(self, game_state):
         pass
 

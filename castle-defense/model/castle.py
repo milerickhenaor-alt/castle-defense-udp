@@ -47,6 +47,7 @@ class Castle(IDamageable, ISerializable):
     hp: int       = 1000
     width: float  = 64.0
     height: float = 128.0
+    variant: str  = "1"
 
     # ------------------------------------------------------------------ #
     #  IDamageable                                                         #
@@ -95,6 +96,7 @@ class Castle(IDamageable, ISerializable):
             "max_hp": self.max_hp,
             "width":  self.width,
             "height": self.height,
+            "variant": self.variant,
         }
 
     @classmethod
@@ -108,6 +110,7 @@ class Castle(IDamageable, ISerializable):
             hp=data.get("hp", 1000),
             width=data.get("width", 64.0),
             height=data.get("height", 128.0),
+            variant=data.get("variant", "1")
         )
 
     def __repr__(self) -> str:
