@@ -1,54 +1,23 @@
 import pygame
-from controller.input_handler import procesar_input
 
-def main():
-    pygame.init()
+def process_input_local(player, controles):
+    """
+    player: El objeto Player del modelo.
+    controles: Diccionario con {up, down, shoot}.
+    """
+    keys = pygame.key.get_pressed()
+    accion = None
+    old_y = player.y
 
-    screen = pygame.display.set_mode((800, 600))
-    clock = pygame.time.Clock()
+    # Movimiento Vertical
+    if keys[controles['up']] and player.y > 300:
+        player.y -= 5
+    if keys[controles['down']] and player.y < 550:
+        player.y += 5
 
-    game_state = None
-    renderer = None
-    network = None
-
-    #Son 4 jugadores
-    jugadores = []
-
-    running = True
-
-    while running:
-        clock.tick(60)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-        # INPUT
-        acciones = procesar_input(jugadores)
-
-        # ACCIONES
-        for accion in acciones:
-            if accion["accion"] == "disparar":
-                print(f"Jugador {accion['jugador_id']} disparó en {accion['posicion']}")
-
-        # UPDATE
-        if game_state:
-            game_state.update()
-
-        # NETWORK
-        if network:
-            for accion in acciones:
-                network.send(accion)
-            data = network.receive()
-
-        # RENDER
-        if renderer:
-            renderer.draw(screen, game_state)
-
-        pygame.display.flip()
-
-    pygame.quit()
-
-
-if __name__ == "__main__":
-    main()
+    # Acción de Disparo
+    if keys[controles['shoot']]:
+        accion = "disparar"
+        
+    se_movio = (player.y != old_y)
+    return accion, se_movio
