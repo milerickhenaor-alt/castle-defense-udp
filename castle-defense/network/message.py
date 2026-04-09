@@ -1,4 +1,3 @@
-
 import json
 from enum import Enum
 
@@ -6,7 +5,10 @@ from enum import Enum
 class MessageType(str, Enum):
     CONNECT = "connect"
     DISCONNECT = "disconnect"
-    INPUT = "input"
+
+    # 🔥 ESTE ES EL IMPORTANTE
+    UPDATE = "update"
+
     STATE_UPDATE = "state_update"
     SPAWN_ENEMY = "spawn_enemy"
     DAMAGE_CASTLE = "damage_castle"
@@ -18,22 +20,18 @@ class MessageType(str, Enum):
 
 
 def create_message(message_type, payload):
-    """Build a JSON message ready to send over UDP."""
-    packet = {
+    return json.dumps({
         "type": message_type,
         "payload": payload,
-    }
-    return json.dumps(packet).encode("utf-8")
+    }).encode("utf-8")
 
 
 def parse_message(data):
-    """Parse incoming UDP bytes into a Python dictionary."""
     try:
-        text = data.decode("utf-8")
-        packet = json.loads(text)
+        packet = json.loads(data.decode("utf-8"))
         if "type" in packet and "payload" in packet:
             return packet
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except:
         return None
 
     return None
