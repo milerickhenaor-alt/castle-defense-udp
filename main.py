@@ -1,51 +1,172 @@
-
 import pygame
-from controller.input_handler import procesar_input
+import sys
+from network.udp_client import UDPClient
+from view.screens.StartScreen import StartScreen
+from view.screens.GameScreen import GameScreen
+from view.screens.WaitingScreen import WaitingScreen
+from model.player import Player
+from model.castle import Castle
+from model.game_state import GameState
 
-# IMPORTS DEL EQUIPO (ajústalos cuando existan)
-# from model.game_state import GameState
-# from view.renderer import Renderer
-# from network.udp_client import UDPClient
+# ================= CONFIG =================
+pygame.init()
+WIDTH, HEIGHT = 1000, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Castle Defense 2vs2 - UDP PRO")
+clock = pygame.time.Clock()
 
-def main():
-    pygame.init()
+client = UDPClient()
+client.send_connect()
 
-    screen = pygame.display.set_mode((800, 600))
-    clock = pygame.time.Clock()
+# ================= ESTADOS =================
+state = "start"
+mis_nombres_locales = []
 
-    game_state = None
-    renderer = None
-    network = None
-    player = None
+start_screen = StartScreen(screen)
+waiting_screen = WaitingScreen(screen)
+game_screen = None
+game_state = None
 
-    running = True
+# ================= INPUT LOCAL =================
+def procesar_input_local(player, controles):
+    keys = pygame.key.get_pressed()
+    accion = None
+    old_y = player.y
 
-    while running:
-        clock.tick(60)  # 60 FPS
+    if keys[controles['up']] and player.y > 300:
+        player.y -= 5
+    if keys[controles['down']] and player.y < 550:
+        player.y += 5
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+    if keys[controles['shoot']]:
+        accion = "disparar"
 
-        accion = procesar_input(player)
+    se_movio = (player.y != old_y)
+    return accion, se_movio
 
-        if accion == "disparar":
-            print("Disparo!")  # luego conectarás con game_state
+# ================= LOOP =================
+running = True
+while running:
+    clock.tick(60)
 
-        if game_state:
-            game_state.update()
+    # ================= RED (RECIBIR TODO EL BUFFER) =================
+    while True:
+        message, addr = client.receive()
+        if not message:
+            break
 
-        if network:
-            network.send({"accion": accion})
-            data = network.receive()
+        msg_type = message.get("type")
+        payload = message.get("payload")
 
-        if renderer:
-            renderer.draw(screen, game_state)
+        # ===== INICIO DE PARTIDA =====
+        if msg_type == "start_game":
+            var_a = str(payload["team_a"]["castle"]).split(" ")[-1]
+            var_b = str(payload["team_b"]["castle"]).split(" ")[-1]
 
-        pygame.display.flip()
+            p1 = Player(payload["team_a"]["names"][0], "A", 120, 350)
+            p2 = Player(payload["team_a"]["names"][1], "A", 120, 450)
+            p3 = Player(payload["team_b"]["names"][0], "B", 880, 350)
+            p4 = Player(payload["team_b"]["names"][1], "B", 880, 450)
 
-    pygame.quit()
+            all_players = [p1, p2, p3, p4]
 
+            castles = {
+                "A": Castle("A", -70, 250, variant=var_a),
+                "B": Castle("B", 840, 250, variant=var_b)
+            }
 
-if __name__ == "__main__":
-    main()
+            enemy_types = {
+                "A": payload["team_a"]["enemy"],
+                "B": payload["team_b"]["enemy"]
+            }
+
+            game_state = GameState(all_players, castles, enemy_types)
+            game_state.local_players = set(mis_nombres_locales)
+
+            selections = {
+                "players": all_players,
+                "castle_a": var_a,
+                "castle_b": var_b,
+                "team_a": payload["team_a"],
+                "team_b": payload["team_b"]
+            }
+
+            game_screen = GameScreen(screen, selections)
+            state = "game"
+
+        # ===== SINCRONIZACIÓN REAL =====
+        elif msg_type == "state_update" and game_state:
+            game_state.update_from_server(payload)
+
+    # ================= EVENTOS =================
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        if state == "start":
+            if start_screen.handle_event(event):
+                mis_nombres_locales = [
+                    start_screen.player1_name,
+                    start_screen.player2_name
+                ]
+
+                datos = {
+                    "names": mis_nombres_locales,
+                    "enemy": start_screen.selected_enemy,
+                    "castle": start_screen.selected_castle
+                }
+
+                client.send_ready(datos)
+                state = "waiting"
+
+    # ================= LÓGICA LOCAL =================
+    if state == "game" and game_state:
+
+        esquemas = [
+            {'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_SPACE},
+            {'up': pygame.K_UP, 'down': pygame.K_DOWN, 'shoot': pygame.K_RETURN}
+        ]
+
+        payload_local = []
+        hubo_cambio = False
+
+        for i, nombre in enumerate(mis_nombres_locales):
+            player = game_state.players.get(nombre)
+
+            if player:
+                accion, se_movio = procesar_input_local(player, esquemas[i])
+
+                if se_movio or accion:
+                    hubo_cambio = True
+
+                payload_local.append({
+                    "name": player.name,
+                    "x": player.x,
+                    "y": player.y,
+                    "action": accion
+                })
+
+        # 🔥 SOLO ENVÍA SI HAY CAMBIOS (CLAVE PARA EL LAG)
+        if hubo_cambio:
+            client.send_update(payload_local)
+
+        game_state.update_client()
+
+    # ================= RENDER =================
+    screen.fill((0, 0, 0))
+
+    if state == "start":
+        start_screen.draw()
+
+    elif state == "waiting":
+        waiting_screen.draw()
+
+    elif state == "game" and game_screen:
+        game_screen.draw(game_state)
+
+    pygame.display.flip()
+
+# ================= SALIDA =================
+client.close()
+pygame.quit()
+sys.exit()
