@@ -66,31 +66,27 @@ class EnemyView:
         self.draw_health_bar(screen, enemy)
 
     def draw_health_bar(self, screen, enemy):
-       def draw_health_bar(self, screen, enemy):
-        # 1. Configuraciones
+        # Configuraciones de la barra
         BAR_WIDTH = 50
         BAR_HEIGHT = 6
-        OFFSET_Y = 45  # Ajusta según la altura del troll
+        # Posicionarla un poco por encima de la cabeza del enemigo
+        OFFSET_Y = 40 
         
-        # 2. Cálculo de proporción (Seguro contra división por cero)
-        health_ratio = max(0, min(1, enemy.hp / enemy.max_hp))
+        # Calcular el porcentaje de vida
+        # Asumiendo que 'enemy' tiene los atributos 'hp' y 'max_hp'
+        health_ratio = max(0, enemy.hp / enemy.max_hp)
         
-        # 3. POSICIONAMIENTO CRÍTICO
-        # Calculamos el X inicial restando la mitad del ancho total de la barra 
-        # a la posición central del enemigo.
-        bar_x = int(enemy.x - (BAR_WIDTH / 2))
-        bar_y = int(enemy.y - OFFSET_Y)
+        # Coordenadas de inicio (centrada respecto al enemigo)
+        bar_x = enemy.x - (BAR_WIDTH / 2)
+        bar_y = enemy.y - OFFSET_Y
 
-        # 4. Dibujo del fondo (Contenedor gris)
-        # Es vital dibujar esto primero para que la barra verde no "flote" sola
-        pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, BAR_WIDTH, BAR_HEIGHT))
         
-        # 5. Dibujo de la vida actual
-        current_health_width = int(BAR_WIDTH * health_ratio)
-        color = (0, 255, 0) if health_ratio > 0.3 else (255, 0, 0)
+        # 2. Barra de vida actual (Verde)
+        # El ancho depende del porcentaje de vida
+        current_health_width = BAR_WIDTH * health_ratio
+        color = (0, 255, 0) if health_ratio > 0.3 else (255, 0, 0) # Cambia a rojo si es baja
         
-        # Dibujamos la barra de color
         pygame.draw.rect(screen, color, (bar_x, bar_y, current_health_width, BAR_HEIGHT))
         
-        # 6. Borde exterior (Para definir los límites fijos)
+        # 3. Opcional: Un borde negro muy fino para que resalte
         pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, BAR_WIDTH, BAR_HEIGHT), 1)
