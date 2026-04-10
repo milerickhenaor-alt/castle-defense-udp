@@ -223,15 +223,22 @@ class GameState:
             enemy.type = e_data.get("type", "Troll 1") 
             enemy.hp = e_data.get("hp", 100)
             self.enemies.append(enemy)
-            
+
         # 3. Actualizar Proyectiles
         self.projectiles = []
         for p_data in data.get("projectiles", []):
+            # Determinamos la dirección según el equipo para que no falten dx y dy
+            # Si el equipo es A, dx es 1 (derecha). Si es B, dx es -1 (izquierda).
+            d_x = 1 if p_data.get("team") == "A" else -1
+            d_y = 0 
+            
             proj = Projectile(
-                p_data["x"], 
-                p_data["y"], 
-                p_data["team"], 
-                p_data.get("owner_name", "unknown")
+                x=p_data["x"], 
+                y=p_data["y"], 
+                team=p_data["team"], 
+                owner_name=p_data.get("owner_name", "unknown"),
+                dx=d_x,  # <--- Agregado
+                dy=d_y   # <--- Agregado
             )
             proj.active = p_data.get("active", True)
             self.projectiles.append(proj)
