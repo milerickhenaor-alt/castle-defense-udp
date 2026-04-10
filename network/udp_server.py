@@ -10,6 +10,7 @@ class UDPServer:
 
         print(f"🚀 Servidor UDP en puerto {port}")
         
+        
         # Mapeamos IP -> Última dirección (IP, Puerto) conocida
         self.clients = {} 
         # Mapeamos IP -> Datos del jugador
@@ -19,7 +20,10 @@ class UDPServer:
         try:
             data, addr = self.sock.recvfrom(4096)
             message = json.loads(data.decode())
-            # Actualizamos la dirección para esta IP (por si cambió el puerto)
+
+            print("📩 Recibido:", message, "de", addr)  # 👈 AQUÍ
+
+            # Actualizamos la dirección
             self.clients[addr[0]] = addr 
             return message, addr
         except:
@@ -60,3 +64,4 @@ class UDPServer:
 
             elif msg_type == "update":
                 self.broadcast({"type": "state_update", "payload": payload})
+

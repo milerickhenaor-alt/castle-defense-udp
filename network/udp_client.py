@@ -17,6 +17,7 @@ class UDPClient:
     def send(self, message_type, payload):
         msg = {"type": message_type, "payload": payload}
         try:
+            print("📤 Enviando:", msg, "a", self.server_address)
             self.sock.sendto(json.dumps(msg).encode(), self.server_address)
         except Exception as e:
             print(f"❌ Error envío: {e}")
