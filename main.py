@@ -12,6 +12,7 @@ from model.game_state import GameState
 pygame.init()
 WIDTH, HEIGHT = 1000, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
 pygame.display.set_caption("Castle Defense 2vs2 - UDP PRO")
 clock = pygame.time.Clock()
 
