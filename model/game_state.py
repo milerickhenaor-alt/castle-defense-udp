@@ -9,6 +9,19 @@ from model.player import Player
 from model.projectile import Projectile
 from model.factories import EnemyFactory
 
+# AGREGA ESTO AQUÍ (Asegúrate de que no tengan espacios a la izquierda)
+EVENT_ENEMY_KILLED    = "enemy_killed"
+EVENT_CASTLE_DAMAGED  = "castle_damaged"
+EVENT_GAME_OVER       = "game_over"
+EVENT_PROJECTILE_HIT  = "projectile_hit"
+
+_ALL_EVENTS = (
+    EVENT_ENEMY_KILLED, 
+    EVENT_CASTLE_DAMAGED, 
+    EVENT_GAME_OVER, 
+    EVENT_PROJECTILE_HIT
+)
+
 
 class GameState:
     def __init__(
