@@ -66,6 +66,11 @@ class GameState:
         self._check_collisions()
         self._check_game_over()
 
+    # ASEGÚRATE DE QUE ESTO ESTÉ ALINEADO CON EL 'def' DE ARRIBA
+    def update_client(self) -> None:
+        """Corre en el cliente."""
+        pass
+
     # ---------------- PROJECTILES ---------------- #
 
     def _update_projectiles(self):
