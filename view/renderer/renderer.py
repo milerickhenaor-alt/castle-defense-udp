@@ -60,11 +60,13 @@ class Renderer:
         # --- Enemigos ---
         current_enemy_ids = set()
 
+        print("👾 Enemigos recibidos:", len(game_state.enemies))
         for enemy in game_state.enemies:
+            print("Enemy:", enemy.id, enemy.x, enemy.y, enemy.type)
             current_enemy_ids.add(enemy.id)
 
             if enemy.id not in self.enemy_views:
-                enemy_type = self.enemy_types.get(enemy.team, "Troll 1")
+                enemy_type = getattr(enemy, "type", "Troll 1")
                 self.enemy_views[enemy.id] = EnemyView(enemy, enemy_type)
 
             view = self.enemy_views[enemy.id]
