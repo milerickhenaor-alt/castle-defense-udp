@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Pygame & Multimedia
+*.log
+desktop.ini
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Configuración local (Importante si guardas IPs aquí)
+assets/config.properties
