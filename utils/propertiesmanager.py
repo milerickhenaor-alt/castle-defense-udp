@@ -1,6 +1,6 @@
 class PropertiesManager:
 
-    def __init__(self, path="config.properties"):
+    def __init__(self, path="assets/config.properties"):
         self.properties = {}
 
         with open(path, "r") as f:
