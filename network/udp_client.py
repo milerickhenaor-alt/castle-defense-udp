@@ -23,10 +23,11 @@ class UDPClient:
 
         self.sock.setblocking(False)
 
-    def send(self, message_type, data):
+    # ================= ENVÍO BASE =================
+    def send(self, message_type, payload):
         message = {
             "type": message_type,
-            "data": data
+            "payload": payload   # 🔥 IMPORTANTE: usas 'payload' en main
         }
 
         try:
@@ -34,15 +35,35 @@ class UDPClient:
         except Exception as e:
             print("Error enviando UDP:", e)
 
+    # ================= PROTOCOLO =================
+
+    def send_connect(self):
+        self.send("connect", {})
+
+    def send_ready(self, data):
+        self.send("ready", data)
+
+    def send_update(self, data):
+        self.send("update", data)
+
+    def send_disconnect(self):
+        self.send("disconnect", {})
+
+    # ================= RECEPCIÓN =================
     def receive(self):
         try:
-            data, _ = self.sock.recvfrom(4096)
-            return json.loads(data.decode())
+            data, addr = self.sock.recvfrom(4096)
+            message = json.loads(data.decode())
+
+            return message, addr  # 🔥 AHORA coincide con tu main
+
         except BlockingIOError:
-            return None
+            return None, None
+
         except Exception as e:
             print("Error recibiendo UDP:", e)
-            return None
+            return None, None
 
+    # ================= CIERRE =================
     def close(self):
         self.sock.close()

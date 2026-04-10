@@ -14,11 +14,12 @@ class UDPServer:
         print(f"Servidor UDP escuchando en {host}:{port}")
 
         self.clients = set()
+        self.ready_players = {}  # 🔥 jugadores listos
 
+    # ================= RECEPCIÓN =================
     def receive(self):
         try:
             data, addr = self.sock.recvfrom(4096)
-
             message = json.loads(data.decode())
 
             if addr not in self.clients:
@@ -33,6 +34,7 @@ class UDPServer:
             print("Error en servidor UDP:", e)
             return None, None
 
+    # ================= ENVÍO =================
     def send(self, message, addr):
         try:
             self.sock.sendto(json.dumps(message).encode(), addr)
@@ -43,7 +45,7 @@ class UDPServer:
         for client in self.clients:
             self.send(message, client)
 
-    # 🔥 ESTE ES EL MÉTODO QUE TE FALTABA
+    # ================= UPDATE =================
     def update(self):
         message, addr = self.receive()
 
@@ -53,18 +55,44 @@ class UDPServer:
         print("Mensaje recibido:", message)
 
         msg_type = message.get("type")
-        data = message.get("data")
+        payload = message.get("payload")  # 🔥 CORREGIDO
 
+        # ================= CONNECT =================
         if msg_type == "connect":
             print("Cliente conectado:", addr)
 
             self.send({
                 "type": "connect_ack",
-                "data": {}
+                "payload": {}
             }, addr)
 
-        elif msg_type == "player_update":
+        # ================= READY =================
+        elif msg_type == "ready":
+            print("Jugador listo:", payload)
+
+            self.ready_players[addr] = payload
+
+            # 🔥 cuando hay 2 equipos (4 jugadores)
+            if len(self.ready_players) >= 2:
+
+                players_data = list(self.ready_players.values())
+
+                start_payload = {
+                    "team_a": players_data[0],
+                    "team_b": players_data[1]
+                }
+
+                print("🚀 Iniciando partida")
+
+                self.broadcast({
+                    "type": "start_game",
+                    "payload": start_payload
+                })
+
+        # ================= UPDATE =================
+        elif msg_type == "update":
+            # 🔥 reenviar a todos
             self.broadcast({
-                "type": "player_update",
-                "data": data
+                "type": "state_update",
+                "payload": payload
             })
