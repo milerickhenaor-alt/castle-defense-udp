@@ -150,6 +150,7 @@ class GameState:
         pass
 
     def _spawn_enemies(self) -> None:
+        print("🔥 INTENTANDO SPAWN")
         now = time.time()
         if now - self._last_spawn_time < self.enemy_spawn_interval: return
         if len(self.enemies) >= self.max_enemies_on_screen: return
