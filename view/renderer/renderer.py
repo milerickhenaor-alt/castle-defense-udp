@@ -1,3 +1,18 @@
+"""
+view/renderer/renderer.py
+
+Principios SOLID aplicados
+--------------------------
+SRP : Renderer coordina el dibujo de todas las entidades pero delega
+      el dibujo específico a cada View (PlayerView, EnemyView, CastleView).
+      No sabe cómo dibujar un sprite — solo sabe a quién pedírselo.
+OCP : Para agregar un nuevo tipo de entidad visual (ej: proyectiles),
+      solo se crea ProjectileView implementando IDrawable y se agrega
+      al loop de render. No se modifica la lógica existente.
+DIP : Renderer depende de IDrawable (abstracción), no de PlayerView
+      o EnemyView directamente. Cualquier IDrawable puede ser renderizado.
+"""
+
 import pygame
 import os
 from view.renderer.PlayerView import PlayerView
@@ -6,10 +21,17 @@ from view.renderer.CastleView import CastleView
 
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
+
 class Renderer:
+    """
+    Coordinador de renderizado.
+    DIP: opera sobre IDrawable, no sobre clases concretas.
+    OCP: extensible sin modificación.
+    """
+
     def __init__(self, screen, selections):
         self.screen = screen
-        
+
         # --- Fondo ---
         try:
             bg_path = os.path.join(BASE_PATH, "assets", "images", "background", "Background.png")
@@ -20,49 +42,48 @@ class Renderer:
             self.background = pygame.Surface((1000, 600))
             self.background.fill((30, 30, 30))
 
-        # --- Jugadores ---
+        # --- Jugadores (IDrawable) ---
         self.player_views = {}
         if "players" in selections:
             for p in selections["players"]:
                 self.player_views[p.name] = PlayerView(p)
 
-        # --- Castillos ---
+        # --- Castillos (IDrawable) ---
         self.castle_views = {
             "A": CastleView({"variant": str(selections.get("castle_a", "1"))}),
             "B": CastleView({"variant": str(selections.get("castle_b", "1"))}),
         }
 
-        # --- Enemigos ---
+        # --- Enemigos (IDrawable) ---
         self.enemy_views = {}
         self.enemy_types = selections.get("enemy_types", {})
 
-    def render(self, game_state):
-
+    def render(self, game_state) -> None:
+        """
+        Renderiza todos los elementos del juego en orden.
+        SRP: coordina el dibujo pero delega a cada IDrawable.
+        """
         # --- Fondo ---
         self.screen.blit(self.background, (0, 0))
 
-        # --- Castillos ---
+        # --- Castillos (IDrawable.draw) ---
         for team, castle in game_state.castles.items():
             if team in self.castle_views:
                 self.castle_views[team].draw(self.screen, castle)
 
-        # --- Jugadores ---
+        # --- Jugadores (IDrawable.update + IDrawable.draw) ---
         for player in game_state.players.values():
-
             if player.name not in self.player_views:
-                print(f"Renderer: Creando vista nueva para {player.name}")
                 self.player_views[player.name] = PlayerView(player)
-            
+
             view = self.player_views[player.name]
             view.update()
             view.draw(self.screen, player.x, player.y, player.team)
 
-        # --- Enemigos ---
+        # --- Enemigos (IDrawable.update + IDrawable.draw) ---
         current_enemy_ids = set()
 
-        print("👾 Enemigos recibidos:", len(game_state.enemies))
         for enemy in game_state.enemies:
-            print("Enemy:", enemy.id, enemy.x, enemy.y, enemy.type)
             current_enemy_ids.add(enemy.id)
 
             if enemy.id not in self.enemy_views:
@@ -73,13 +94,16 @@ class Renderer:
             view.update(enemy)
             view.draw(self.screen, enemy)
 
-        # 🔥 FIX IMPORTANTE: limpieza correcta SIEMPRE
+        # Limpiar views de enemigos que ya no existen
         self.enemy_views = {
             eid: ev for eid, ev in self.enemy_views.items()
             if eid in current_enemy_ids
         }
 
-    def draw_ui(self, game_state):
+    def draw_ui(self, game_state) -> None:
+        """
+        SRP: dibuja solo el timer — el HUD completo lo maneja Hud.py.
+        """
         font = pygame.font.SysFont("Arial", 24, bold=True)
         timer_text = font.render(f"Tiempo: {int(game_state.remaining_time)}s", True, (255, 255, 255))
         self.screen.blit(timer_text, (450, 20))
