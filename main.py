@@ -97,52 +97,47 @@ while running:
                 state = "waiting"
 
     # --- 3. LÓGICA DE JUEGO ---
-    if state == "game" and game_state:
-        esquemas = [
-            {'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_SPACE}, 
-            {'up': pygame.K_UP, 'down': pygame.K_DOWN, 'shoot': pygame.K_RETURN}
-        ]
-        datos_a_enviar = []
-        hubo_cambio = False
-        
-        for i, nombre in enumerate(mis_nombres_locales):
-            p = game_state.players.get(nombre)
-            if p:
+        if state == "game" and game_state:
+
+            esquemas = [
+                {'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_SPACE},
+                {'up': pygame.K_UP, 'down': pygame.K_DOWN, 'shoot': pygame.K_RETURN}
+            ]
+
+            datos_a_enviar = []
+            hubo_cambio = False
+
+            for i, nombre in enumerate(mis_nombres_locales):
+                p = game_state.players.get(nombre)
+
+                if not p:
+                    continue
+
                 accion, movido = process_input_local(p, esquemas[i])
 
+                payload = {
+                    "name": p.name,
+                    "x": p.x,
+                    "y": p.y,
+                    "action": None
+                }
+
+                # 🔥 SHOOT (UNIFICADO)
                 if accion == "disparar":
-                    # dirección del disparo según equipo
-                    if p.team == "A":
-                        dx, dy = 1, 0
-                    else:
-                        dx, dy = -1, 0
-
-                    proyectil = Projectile(
-                        owner_name=p.name,
-                        team=p.team,
-                        x=p.x,
-                        y=p.y,
-                        dx=dx,
-                        dy=dy
-                    )
-
-                    # IMPORTANTE: lo agregas al estado local
-                    game_state.projectiles.append(proyectil)
-
+                    payload["action"] = "shoot"
+                    datos_a_enviar.append(payload)
                     hubo_cambio = True
-                    datos_a_enviar.append({
-                        "name": p.name,
-                        "x": p.x,
-                        "y": p.y,
-                        "action": "shoot"
-                    })
-                if movido or accion:
+
+                # movimiento
+                elif movido:
+                    datos_a_enviar.append(payload)
                     hubo_cambio = True
-                    datos_a_enviar.append({"name": p.name, "x": p.x, "y": p.y, "action": accion})
-        
-        if hubo_cambio: client.send_update(datos_a_enviar)
-        game_state.update_client()
-        
+
+            if hubo_cambio:
+                client.send_update(datos_a_enviar)
+
+            game_state.update_client()
+            
         # Si el GameState local detecta fin de juego (tiempo o vida)
         if not game_state.running:
             state = "game_over"

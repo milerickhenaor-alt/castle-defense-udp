@@ -101,6 +101,35 @@ class UDPServer:
                         player.x = p["x"]
                         player.y = p["y"]
 
+            elif msg_type == "update" and self.game_state:
+
+                for p in payload:
+                    player = self.game_state.players.get(p["name"])
+
+                    if not player:
+                        continue
+
+                    player.x = p["x"]
+                    player.y = p["y"]
+
+                    # 🔥 SHOOT HANDLER
+                    if p.get("action") == "shoot":
+
+                        from model.projectile import Projectile
+
+                        dx = 1 if player.team == "A" else -1
+                        dy = 0
+
+                        self.game_state.projectiles.append(
+                            Projectile(
+                                owner_name=player.name,
+                                team=player.team,
+                                x=player.x,
+                                y=player.y,
+                                dx=dx,
+                                dy=dy
+                            )
+                        )
         # 🔥 2. LÓGICA DEL JUEGO (AQUÍ ESTÁ TODO)
         if self.game_state:
             self.game_state.update_server()

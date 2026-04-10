@@ -4,7 +4,7 @@ import os
 from view.renderer.PlayerView import PlayerView
 from view.renderer.EnemyView import EnemyView
 from view.renderer.CastleView import CastleView
-from view.renderer.ProjectileView import ProjectileView  # 👈 FALTABA ESTO
+from view.renderer.ProyectileView import ProjectileView  # 👈 FALTABA ESTO
 
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
