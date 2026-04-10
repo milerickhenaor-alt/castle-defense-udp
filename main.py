@@ -76,7 +76,7 @@ while running:
                 print(f"❌ Error: {e}")
 
         elif msg_type == "state_update" and game_state:
-            game_state.update_from_server(payload)
+            pass
             # Detectar si el servidor dice que el juego terminó
             if isinstance(payload, dict) and payload.get("running") == False:
                 state = "game_over"
