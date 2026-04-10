@@ -21,10 +21,9 @@ class UDPServer:
 
             message = json.loads(data.decode())
 
-            # Registrar cliente automáticamente
             if addr not in self.clients:
                 self.clients.add(addr)
-                print("Nuevo cliente conectado:", addr)
+                print("Nuevo cliente:", addr)
 
             return message, addr
 
@@ -38,8 +37,34 @@ class UDPServer:
         try:
             self.sock.sendto(json.dumps(message).encode(), addr)
         except Exception as e:
-            print("Error enviando a cliente:", e)
+            print("Error enviando:", e)
 
     def broadcast(self, message):
         for client in self.clients:
             self.send(message, client)
+
+    # 🔥 ESTE ES EL MÉTODO QUE TE FALTABA
+    def update(self):
+        message, addr = self.receive()
+
+        if message is None:
+            return
+
+        print("Mensaje recibido:", message)
+
+        msg_type = message.get("type")
+        data = message.get("data")
+
+        if msg_type == "connect":
+            print("Cliente conectado:", addr)
+
+            self.send({
+                "type": "connect_ack",
+                "data": {}
+            }, addr)
+
+        elif msg_type == "player_update":
+            self.broadcast({
+                "type": "player_update",
+                "data": data
+            })
