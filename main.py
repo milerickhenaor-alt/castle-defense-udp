@@ -14,7 +14,7 @@ pygame.init()
 WIDTH, HEIGHT = 1000, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Tower Defense Sockets - Multijugador")
-clock = pygame.time.Clock()
+clock = pygame.time.Clock() 
 
 client = UDPClient()
 client.send_connect()
@@ -90,7 +90,8 @@ while running:
                 game_screen = GameScreen(screen, {
                     "players": [p1, p2, p3, p4], 
                     "castle_a": var_a, 
-                    "castle_b": var_b
+                    "castle_b": var_b,
+                    "enemy_types": enemy_types
                 })
                 
                 state = "game"

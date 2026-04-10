@@ -34,6 +34,7 @@ class Renderer:
 
         # --- Enemigos ---
         self.enemy_views = {}
+        self.enemy_types = selections.get("enemy_types", {})
 
     def render(self, game_state):
 
@@ -63,7 +64,8 @@ class Renderer:
             current_enemy_ids.add(enemy.id)
 
             if enemy.id not in self.enemy_views:
-                self.enemy_views[enemy.id] = EnemyView(enemy)
+                enemy_type = self.enemy_types.get(enemy.team, "Troll 1")
+                self.enemy_views[enemy.id] = EnemyView(enemy, enemy_type)
 
             view = self.enemy_views[enemy.id]
             view.update(enemy)
