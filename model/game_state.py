@@ -192,3 +192,53 @@ class GameState:
             "running": self.running,
             "winner": self.winner_team
         }
+    
+    # --- Agrégalo al final de la clase GameState en model/game_state.py ---
+
+    def update_from_dict(self, data: dict):
+        """Actualiza el estado local con los datos recibidos del servidor."""
+        if not data:
+            return
+
+        # 1. Actualizar Jugadores
+        for p_data in data.get("players", []):
+            name = p_data.get("name")
+            if name in self.players:
+                self.players[name].x = p_data.get("x")
+                self.players[name].y = p_data.get("y")
+                self.players[name].score = p_data.get("score", 0)
+
+        # 2. Actualizar Enemigos (Limpiamos y recreamos para sincronizar)
+        self.enemies = []
+        for e_data in data.get("enemies", []):
+            enemy = Enemy(
+                id=e_data["id"],
+                team=e_data["team"],
+                x=e_data["x"],
+                y=e_data["y"],
+                enemy_type=e_data.get("type", "Troll 1")
+            )
+            enemy.hp = e_data.get("hp", 100)
+            self.enemies.append(enemy)
+
+        # 3. Actualizar Proyectiles
+        self.projectiles = []
+        for p_data in data.get("projectiles", []):
+            proj = Projectile(
+                p_data["x"], 
+                p_data["y"], 
+                p_data["team"], 
+                p_data.get("owner_name", "unknown")
+            )
+            proj.active = p_data.get("active", True)
+            self.projectiles.append(proj)
+
+        # 4. Actualizar Castillos
+        castles_data = data.get("castles", {})
+        for team, c_data in castles_data.items():
+            if team in self.castles:
+                self.castles[team].hp = c_data.get("hp", 100)
+
+        # 5. Datos generales
+        self.running = data.get("running", True)
+        self.winner_team = data.get("winner", "")
