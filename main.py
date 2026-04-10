@@ -45,8 +45,28 @@ def procesar_input_local(player, controles):
         
     return accion, (player.y != old_y)
 
+def draw_game_over(screen, winner):
+    """Muestra una pantalla simple de fin de juego."""
+    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 180))
+    screen.blit(overlay, (0, 0))
+    
+    font = pygame.font.SysFont("Arial", 64, bold=True)
+    text = f"GANADOR: EQUIPO {winner}"
+    color = (0, 255, 0) if winner else (255, 255, 255)
+    
+    render_text = font.render(text, True, color)
+    rect = render_text.get_rect(center=(WIDTH//2, HEIGHT//2))
+    screen.blit(render_text, rect)
+    
+    font_small = pygame.font.SysFont("Arial", 24)
+    hint = font_small.render("Cerrando juego en 5 segundos...", True, (200, 200, 200))
+    screen.blit(hint, (WIDTH//2 - 120, HEIGHT//2 + 60))
+
 # --- BUCLE PRINCIPAL ---
 running = True
+game_over_start_time = None
+
 while running:
     clock.tick(60)
 
@@ -60,18 +80,14 @@ while running:
 
         if msg_type == "start_game":
             try:
-                # 1. Extraer variantes de castillo (Ej: "Castle 1" -> "1")
                 var_a = str(payload["team_a"].get("castle", "Castle 1")).split(" ")[-1]
                 var_b = str(payload["team_b"].get("castle", "Castle 2")).split(" ")[-1]
                 
-                # 2. Crear Jugadores con los nombres reales de personajes (War 1, Gent 2, etc.)
-                # Estos nombres vienen de lo que cada cliente eligió en su StartScreen
                 p1 = Player(payload["team_a"]["names"][0], "A", 160, 350)
                 p2 = Player(payload["team_a"]["names"][1], "A", 160, 450)
                 p3 = Player(payload["team_b"]["names"][0], "B", 845, 350)
                 p4 = Player(payload["team_b"]["names"][1], "B", 845, 450)
                 
-                # 3. Configurar Castillos y tipos de Enemigos
                 castles = {
                     "A": Castle("A", -70, 250, variant=var_a), 
                     "B": Castle("B", 840, 250, variant=var_b)
@@ -81,12 +97,9 @@ while running:
                     "B": payload["team_b"].get("enemy", "Troll 1")
                 }
                 
-                # 4. Inicializar Estado del Juego (Lógica)
                 game_state = GameState([p1, p2, p3, p4], castles, enemy_types)
                 game_state.local_players = set(mis_nombres_locales)
                 
-                # 5. Inicializar Pantalla de Juego (Visual)
-                # Pasamos 'payload' completo para que el Renderer sepa qué enemigos cargar
                 game_screen = GameScreen(screen, {
                     "players": [p1, p2, p3, p4], 
                     "castle_a": var_a, 
@@ -95,14 +108,18 @@ while running:
                 })
                 
                 state = "game"
-                print(f"🎮 Juego Iniciado: {payload['team_a']['names']} vs {payload['team_b']['names']}")
+                print(f"🎮 Juego Iniciado!")
                 
             except Exception as e:
                 print(f"❌ Error crítico al iniciar juego: {e}")
 
         elif msg_type == "state_update" and game_state:
-            # Aquí es donde los monstruos y otros jugadores se sincronizan
             game_state.update_from_server(payload)
+            # Verificar si el servidor mandó señal de fin de juego
+            if isinstance(payload, dict) and not payload.get("running", True):
+                state = "game_over"
+                if game_over_start_time is None:
+                    game_over_start_time = pygame.time.get_ticks()
 
     # --- 2. EVENTOS DE ENTRADA ---
     for event in pygame.event.get():
@@ -110,12 +127,8 @@ while running:
             running = False
             
         if state == "start":
-            # handle_event devuelve True cuando el usuario pulsa "JUGAR"
             if start_screen.handle_event(event):
-                # Guardamos qué personajes elegimos localmente (Ej: ["War 1", "Fairy 2"])
                 mis_nombres_locales = [start_screen.player1_name, start_screen.player2_name]
-                
-                # Enviamos al servidor nuestra elección
                 client.send_ready({
                     "names": mis_nombres_locales, 
                     "enemy": start_screen.selected_enemy, 
@@ -125,7 +138,6 @@ while running:
 
     # --- 3. LÓGICA DE JUEGO (ENVÍO DE DATOS) ---
     if state == "game" and game_state:
-        # Definimos controles para los dos jugadores de esta PC
         esquemas = [
             {'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_SPACE}, 
             {'up': pygame.K_UP, 'down': pygame.K_DOWN, 'shoot': pygame.K_RETURN}
@@ -141,29 +153,35 @@ while running:
                 if movido or accion:
                     hubo_cambio = True
                     datos_a_enviar.append({
-                        "name": p.name, 
-                        "x": p.x, 
-                        "y": p.y, 
-                        "action": accion
+                        "name": p.name, "x": p.x, "y": p.y, "action": accion
                     })
         
-        # Enviamos nuestra posición y acciones al servidor para que el resto nos vea
         if hubo_cambio: 
             client.send_update(datos_a_enviar)
         
-        # El cliente puede ejecutar lógica menor (como predicción)
         game_state.update_client()
+        
+        # Verificar Game Over local por si acaso el servidor tarda en avisar
+        if not game_state.running:
+            state = "game_over"
+            game_over_start_time = pygame.time.get_ticks()
 
     # --- 4. DIBUJO ---
-    screen.fill((0, 0, 0)) # Limpiar pantalla
+    screen.fill((0, 0, 0)) 
     
     if state == "start": 
         start_screen.draw()
     elif state == "waiting": 
         waiting_screen.draw()
-    elif state == "game" and game_screen: 
-        # Renderer.render() dibuja fondo, castillos, monstruos y jugadores
-        game_screen.draw(game_state)
+    elif state == "game" or state == "game_over":
+        if game_screen:
+            game_screen.draw(game_state)
+        
+        if state == "game_over":
+            draw_game_over(screen, game_state.winner_team)
+            # Salir después de 5 segundos
+            if pygame.time.get_ticks() - game_over_start_time > 5000:
+                running = False
     
     pygame.display.flip()
 
