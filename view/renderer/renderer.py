@@ -62,9 +62,12 @@ class Renderer:
 
         # --- 5. PROYECTILES (NUEVO) ---
         for proj in game_state.projectiles:
-            if proj.active:
-                # Dibujamos usando la vista única
-                self.projectile_view.draw(self.screen, proj.x, proj.y, proj.team)
+            self.projectile_view.draw(
+                self.screen,
+                proj.x,
+                proj.y,
+                proj.team
+            )
 
         print("👾 Enemigos recibidos:", len(game_state.enemies))
         for enemy in game_state.enemies:

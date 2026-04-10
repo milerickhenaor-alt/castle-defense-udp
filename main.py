@@ -8,6 +8,7 @@ from view.screens.WaitingScreen import WaitingScreen
 from view.screens.GameOverScreen import GameOverScreen # <--- Importamos tu nueva pantalla
 from model.player import Player
 from model.castle import Castle
+from model.projectile import Projectile
 from model.game_state import GameState
 from controller.input_handler import process_input_local
 # --- CONFIGURACIÓN INICIAL ---
@@ -28,15 +29,6 @@ waiting_screen = WaitingScreen(screen)
 game_over_screen = GameOverScreen(screen) # <--- Instanciamos tu pantalla
 game_screen = None
 game_state = None
-
-def procesar_input_local(player, controles):
-    keys = pygame.key.get_pressed()
-    accion = None
-    old_y = player.y
-    if keys[controles['up']] and player.y > 300: player.y -= 5
-    if keys[controles['down']] and player.y < 550: player.y += 5
-    if keys[controles['shoot']]: accion = "disparar"
-    return accion, (player.y != old_y)
 
 # --- BUCLE PRINCIPAL ---
 running = True
@@ -117,6 +109,33 @@ while running:
             p = game_state.players.get(nombre)
             if p:
                 accion, movido = process_input_local(p, esquemas[i])
+
+                if accion == "disparar":
+                    # dirección del disparo según equipo
+                    if p.team == "A":
+                        dx, dy = 1, 0
+                    else:
+                        dx, dy = -1, 0
+
+                    proyectil = Projectile(
+                        owner_name=p.name,
+                        team=p.team,
+                        x=p.x,
+                        y=p.y,
+                        dx=dx,
+                        dy=dy
+                    )
+
+                    # IMPORTANTE: lo agregas al estado local
+                    game_state.projectiles.append(proyectil)
+
+                    hubo_cambio = True
+                    datos_a_enviar.append({
+                        "name": p.name,
+                        "x": p.x,
+                        "y": p.y,
+                        "action": "shoot"
+                    })
                 if movido or accion:
                     hubo_cambio = True
                     datos_a_enviar.append({"name": p.name, "x": p.x, "y": p.y, "action": accion})

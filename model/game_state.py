@@ -146,7 +146,15 @@ class GameState:
         self._check_game_over()
 
     def update_client(self) -> None:
-        """Corre en el cliente (puedes añadir interpolación aquí)."""
+        for p in self.projectiles:
+            if p.active:
+                p.update()
+
+                if p.is_out_of_bounds(self.map_width, self.map_height):
+                    p.deactivate()
+
+        # limpiar inactivos
+        self.projectiles = [p for p in self.projectiles if p.active]
         pass
 
     def _spawn_enemies(self) -> None:
