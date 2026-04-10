@@ -66,27 +66,32 @@ class EnemyView:
         self.draw_health_bar(screen, enemy)
 
     def draw_health_bar(self, screen, enemy):
-        # Configuraciones de la barra
-        BAR_WIDTH = 50
-        BAR_HEIGHT = 6
-        # Posicionarla un poco por encima de la cabeza del enemigo
-        OFFSET_Y = 40 
+        # 1. Ajustamos el tamaño para que sea más proporcional al troll pequeño
+        BAR_WIDTH = 40  
+        BAR_HEIGHT = 5
+        OFFSET_Y = 35 # Cuanto más alto el número, más arriba de la cabeza flota
         
         # Calcular el porcentaje de vida
-        # Asumiendo que 'enemy' tiene los atributos 'hp' y 'max_hp'
-        health_ratio = max(0, enemy.hp / enemy.max_hp)
+        health_ratio = max(0, min(1, enemy.hp / enemy.max_hp))
         
-        # Coordenadas de inicio (centrada respecto al enemigo)
-        bar_x = enemy.x - (BAR_WIDTH / 2)
-        bar_y = enemy.y - OFFSET_Y
+        # 2. Posicionamiento: Usamos int() para evitar que la barra "vibre" al moverse
+        bar_x = int(enemy.x - (BAR_WIDTH / 2))
+        bar_y = int(enemy.y - OFFSET_Y)
 
+        # --- DIBUJO ---
         
-        # 2. Barra de vida actual (Verde)
-        # El ancho depende del porcentaje de vida
-        current_health_width = BAR_WIDTH * health_ratio
-        color = (0, 255, 0) if health_ratio > 0.3 else (255, 0, 0) # Cambia a rojo si es baja
+        # A. EL FONDO (Esto es lo que falta en tu imagen)
+        # Dibujamos un rectángulo gris oscuro de ancho TOTAL. 
+        # Esto hace que el jugador vea cuánto espacio "falta" por llenar.
+        pygame.draw.rect(screen, (40, 40, 40), (bar_x, bar_y, BAR_WIDTH, BAR_HEIGHT))
         
-        pygame.draw.rect(screen, color, (bar_x, bar_y, current_health_width, BAR_HEIGHT))
+        # B. LA VIDA ACTUAL
+        current_health_width = int(BAR_WIDTH * health_ratio)
+        color = (0, 255, 0) if health_ratio > 0.3 else (255, 0, 0)
         
-        # 3. Opcional: Un borde negro muy fino para que resalte
+        # Solo dibujamos la parte proporcional
+        if current_health_width > 0:
+            pygame.draw.rect(screen, color, (bar_x, bar_y, current_health_width, BAR_HEIGHT))
+        
+        # C. EL BORDE (Para que se vea nítido)
         pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, BAR_WIDTH, BAR_HEIGHT), 1)
