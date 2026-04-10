@@ -208,19 +208,22 @@ class GameState:
                 self.players[name].y = p_data.get("y")
                 self.players[name].score = p_data.get("score", 0)
 
-        # 2. Actualizar Enemigos (Limpiamos y recreamos para sincronizar)
         self.enemies = []
         for e_data in data.get("enemies", []):
+            # Aquí está el truco: verifica si tu clase Enemy usa 'enemy_type' o 'type'
+            # Por lo que veo en el error, 'enemy_type' NO es el nombre correcto.
             enemy = Enemy(
                 id=e_data["id"],
                 team=e_data["team"],
                 x=e_data["x"],
-                y=e_data["y"],
-                enemy_type=e_data.get("type", "Troll 1")
+                y=e_data["y"]
+                # Quitamos el nombre del argumento 'enemy_type=' para evitar el error
             )
+            # Si necesitas pasarle el tipo, asígnale el valor después:
+            enemy.type = e_data.get("type", "Troll 1") 
             enemy.hp = e_data.get("hp", 100)
             self.enemies.append(enemy)
-
+            
         # 3. Actualizar Proyectiles
         self.projectiles = []
         for p_data in data.get("projectiles", []):
