@@ -1,8 +1,10 @@
 import pygame
 import os
+
 from view.renderer.PlayerView import PlayerView
 from view.renderer.EnemyView import EnemyView
 from view.renderer.CastleView import CastleView
+from view.renderer.ProjectileView import ProjectileView  # 👈 FALTABA ESTO
 
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -36,6 +38,9 @@ class Renderer:
         self.enemy_views = {}
         self.enemy_types = selections.get("enemy_types", {})
 
+        # --- PROYECTILES (🔥 ESTO TE FALTABA) ---
+        self.projectile_view = ProjectileView()
+
     def render(self, game_state):
 
         # --- Fondo ---
@@ -57,19 +62,21 @@ class Renderer:
             view.update()
             view.draw(self.screen, player.x, player.y, player.team)
 
-        # --- Enemigos ---
+        # --- PROYECTILES ---
+        for proj in game_state.projectiles:
+            if proj.active:
+                self.projectile_view.draw(
+                    self.screen,
+                    proj.x,
+                    proj.y,
+                    proj.team
+                )
+
+        # --- ENEMIGOS ---
         current_enemy_ids = set()
 
-        # --- 5. PROYECTILES (NUEVO) ---
-        for proj in game_state.projectiles:
-            self.projectile_view.draw(
-                self.screen,
-                proj.x,
-                proj.y,
-                proj.team
-            )
-
         print("👾 Enemigos recibidos:", len(game_state.enemies))
+
         for enemy in game_state.enemies:
             print("Enemy:", enemy.id, enemy.x, enemy.y, enemy.type)
             current_enemy_ids.add(enemy.id)
@@ -82,7 +89,7 @@ class Renderer:
             view.update(enemy)
             view.draw(self.screen, enemy)
 
-        # 🔥 FIX IMPORTANTE: limpieza correcta SIEMPRE
+        # 🔥 LIMPIEZA DE ENEMIGOS
         self.enemy_views = {
             eid: ev for eid, ev in self.enemy_views.items()
             if eid in current_enemy_ids
@@ -90,5 +97,9 @@ class Renderer:
 
     def draw_ui(self, game_state):
         font = pygame.font.SysFont("Arial", 24, bold=True)
-        timer_text = font.render(f"Tiempo: {int(game_state.remaining_time)}s", True, (255, 255, 255))
+        timer_text = font.render(
+            f"Tiempo: {int(game_state.remaining_time)}s",
+            True,
+            (255, 255, 255)
+        )
         self.screen.blit(timer_text, (450, 20))
