@@ -54,10 +54,10 @@ while running:
                 var_b = str(payload["team_b"].get("castle", "Castle 2")).split(" ")[-1]
                 
                 # Crear Jugadores
-                p1 = Player(payload["team_a"]["names"][0], "A", 120, 350)
-                p2 = Player(payload["team_a"]["names"][1], "A", 120, 450)
-                p3 = Player(payload["team_b"]["names"][0], "B", 880, 350)
-                p4 = Player(payload["team_b"]["names"][1], "B", 880, 450)
+                p1 = Player(payload["team_a"]["names"][0], "A", 150, 350)
+                p2 = Player(payload["team_a"]["names"][1], "A", 150, 450)
+                p3 = Player(payload["team_b"]["names"][0], "B", 860, 350)
+                p4 = Player(payload["team_b"]["names"][1], "B", 860, 450)
                 
                 castles = {
                     "A": Castle("A", -70, 250, variant=var_a), 
