@@ -14,12 +14,11 @@ class UDPServer:
         self.sock.bind(self.server_address)
         self.sock.setblocking(False)
 
-        print(f"🚀 Servidor UDP iniciado en puerto {port}")
+        print(f"🚀 SERVIDOR INICIADO EN PUERTO {port}")
+        print("Esperando conexiones...")
 
         self.clients = set()
-        self.ready_players = {}
-
-        # 🔥 GAME STATE DEL SERVIDOR
+        self.ready_players = {} 
         self.game_state = None
 
     def receive(self):
@@ -28,7 +27,7 @@ class UDPServer:
             message = json.loads(data.decode())
             if addr not in self.clients:
                 self.clients.add(addr)
-                print(f"✨ Nuevo cliente: {addr}")
+                print(f"✨ Nuevo cliente detectado: {addr}")
             return message, addr
         except:
             return None, None
@@ -37,14 +36,14 @@ class UDPServer:
         try:
             self.sock.sendto(json.dumps(message).encode(), addr)
         except Exception as e:
-            print(f"❌ Error enviando: {e}")
+            print(f"❌ Error al enviar a {addr}: {e}")
 
     def broadcast(self, message):
         for client in self.clients:
             self.send(message, client)
 
     def update(self):
-        # 🔥 1. RECIBIR MENSAJES
+        # 1. PROCESAR MENSAJES
         while True:
             message, addr = self.receive()
             if message is None:
@@ -54,22 +53,19 @@ class UDPServer:
             payload = message.get("payload")
 
             if msg_type == "connect":
+                print(f"🔗 Cliente {addr} solicitó conexión")
                 self.send({"type": "connect_ack", "payload": {}}, addr)
 
             elif msg_type == "ready":
                 self.ready_players[addr] = payload
-                print(f"✅ Jugador listo: {len(self.ready_players)}/2")
+                print(f"✅ JUGADOR LISTO: {addr}. Total listos: {len(self.ready_players)}/2")
 
-                # Condición para 2 jugadores
+                # INICIAR PARTIDA SI HAY 2
                 if len(self.ready_players) >= 2 and not self.game_state:
+                    print("🎮 ¡PARTIDA LISTA! Generando GameState...")
                     players_data = list(self.ready_players.values())
 
-                    start_payload = {
-                        "team_a": players_data[0],
-                        "team_b": players_data[1]
-                    }
-
-                    # 🔥 CREAR GAMESTATE EN SERVIDOR
+                    # Crear entidades
                     p1 = Player(players_data[0]["names"][0], "A", 160, 350)
                     p2 = Player(players_data[0]["names"][1], "A", 160, 450)
                     p3 = Player(players_data[1]["names"][0], "B", 845, 350)
@@ -85,54 +81,35 @@ class UDPServer:
                         "B": players_data[1].get("enemy", "Troll 1")
                     }
 
-                    self.game_state = GameState(
-                        [p1, p2, p3, p4],
-                        castles,
-                        enemy_types
-                    )
+                    self.game_state = GameState([p1, p2, p3, p4], castles, enemy_types)
+                    
+                    start_msg = {
+                        "type": "start_game",
+                        "payload": {
+                            "team_a": players_data[0],
+                            "team_b": players_data[1]
+                        }
+                    }
+                    print("📡 Enviando start_game a todos los clientes...")
+                    self.broadcast(start_msg)
 
-                    print("🎮 Juego iniciado en servidor")
-                    self.broadcast({"type": "start_game", "payload": start_payload})
-
-            # PRIMER BLOQUE UPDATE: Movimiento básico
             elif msg_type == "update" and self.game_state:
-                for p in payload:
-                    player = self.game_state.players.get(p["name"])
+                # Sincronización de movimiento y disparos
+                for p_info in payload:
+                    player = self.game_state.players.get(p_info["name"])
                     if player:
-                        player.x = p["x"]
-                        player.y = p["y"]
-
-            # SEGUNDO BLOQUE UPDATE: Acciones especiales (Disparo)
-            if msg_type == "update" and self.game_state:
-                for p in payload:
-                    player = self.game_state.players.get(p["name"])
-
-                    if not player:
-                        continue
-
-                    # 🔥 SHOOT HANDLER
-                    if p.get("action") == "shoot":
-                        dx = 1 if player.team == "A" else -1
-                        dy = 0
-
-                        self.game_state.projectiles.append(
-                            Projectile(
-                                owner_name=player.name,
-                                team=player.team,
-                                x=player.x,
-                                y=player.y,
-                                dx=dx,
-                                dy=dy
+                        player.x = p_info["x"]
+                        player.y = p_info["y"]
+                        if p_info.get("action") == "shoot":
+                            dx = 1 if player.team == "A" else -1
+                            self.game_state.projectiles.append(
+                                Projectile(player.x, player.y, player.team, player.name, dx, 0)
                             )
-                        )
 
-        # 🔥 2. LÓGICA DEL JUEGO (Fuera del bucle de mensajes para que corra siempre)
+        # 2. ACTUALIZAR FÍSICA Y NOTIFICAR ESTADO
         if self.game_state:
             self.game_state.update_server()
-
-            # 🔥 3. ENVIAR ESTADO COMPLETO
-            state = self.game_state.to_dict()
             self.broadcast({
                 "type": "state_update",
-                "payload": state
+                "payload": self.game_state.to_dict()
             })
