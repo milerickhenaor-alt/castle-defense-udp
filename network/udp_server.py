@@ -5,6 +5,7 @@ import time
 from model.game_state import GameState
 from model.player import Player
 from model.castle import Castle
+from model.projectile import Projectile
 
 class UDPServer:
     def __init__(self, host="0.0.0.0", port=5000):
@@ -57,9 +58,10 @@ class UDPServer:
 
             elif msg_type == "ready":
                 self.ready_players[addr] = payload
-                print(f"✅ Jugador listo: {len(self.ready_players)}")
+                print(f"✅ Jugador listo: {len(self.ready_players)}/2")
 
-                if len(self.ready_players) >= 2:
+                # Condición para 2 jugadores
+                if len(self.ready_players) >= 2 and not self.game_state:
                     players_data = list(self.ready_players.values())
 
                     start_payload = {
@@ -90,33 +92,26 @@ class UDPServer:
                     )
 
                     print("🎮 Juego iniciado en servidor")
-
                     self.broadcast({"type": "start_game", "payload": start_payload})
 
+            # PRIMER BLOQUE UPDATE: Movimiento básico
             elif msg_type == "update" and self.game_state:
-                # Actualizar jugadores en servidor
                 for p in payload:
                     player = self.game_state.players.get(p["name"])
                     if player:
                         player.x = p["x"]
                         player.y = p["y"]
 
-            elif msg_type == "update" and self.game_state:
-
+            # SEGUNDO BLOQUE UPDATE: Acciones especiales (Disparo)
+            if msg_type == "update" and self.game_state:
                 for p in payload:
                     player = self.game_state.players.get(p["name"])
 
                     if not player:
                         continue
 
-                    player.x = p["x"]
-                    player.y = p["y"]
-
                     # 🔥 SHOOT HANDLER
                     if p.get("action") == "shoot":
-
-                        from model.projectile import Projectile
-
                         dx = 1 if player.team == "A" else -1
                         dy = 0
 
@@ -130,7 +125,8 @@ class UDPServer:
                                 dy=dy
                             )
                         )
-        # 🔥 2. LÓGICA DEL JUEGO (AQUÍ ESTÁ TODO)
+
+        # 🔥 2. LÓGICA DEL JUEGO (Fuera del bucle de mensajes para que corra siempre)
         if self.game_state:
             self.game_state.update_server()
 
