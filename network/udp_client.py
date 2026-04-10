@@ -7,27 +7,19 @@ class UDPClient:
         config = PropertiesManager()
         self.server_ip = config.get("server.ip")
         self.server_port = config.get_int("server.port")
-
         self.server_address = (self.server_ip, self.server_port)
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         
-        try:
-            # Usar "" y puerto 0 permite que Windows asigne automáticamente 
-            # cualquier puerto libre y escuche en todas las interfaces.
-            self.sock.bind(("", 0))
-            self.sock.setblocking(False)
-            puerto_asignado = self.sock.getsockname()[1]
-            print(f"📡 Cliente UDP listo. Puerto local asignado: {puerto_asignado}")
-            print(f"🔗 Intentando conectar al servidor en: {self.server_address}")
-        except Exception as e:
-            print(f"❌ Error crítico al inicializar socket cliente: {e}")
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind(("", 0)) # Puerto aleatorio
+        self.sock.setblocking(False)
+        print(f"📡 Cliente en puerto: {self.sock.getsockname()[1]}")
 
     def send(self, message_type, payload):
-        message = {"type": message_type, "payload": payload}
+        msg = {"type": message_type, "payload": payload}
         try:
-            self.sock.sendto(json.dumps(message).encode(), self.server_address)
+            self.sock.sendto(json.dumps(msg).encode(), self.server_address)
         except Exception as e:
-            print(f"❌ Error enviando datos a {self.server_address}: {e}")
+            print(f"❌ Error envío: {e}")
 
     def send_connect(self): self.send("connect", {})
     def send_ready(self, data): self.send("ready", data)
@@ -37,8 +29,5 @@ class UDPClient:
         try:
             data, addr = self.sock.recvfrom(4096)
             return json.loads(data.decode()), addr
-        except (BlockingIOError, Exception):
+        except:
             return None, None
-
-    def close(self):
-        self.sock.close()
