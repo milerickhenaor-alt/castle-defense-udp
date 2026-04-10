@@ -12,7 +12,7 @@ class UDPServer:
 
         print(f"🚀 Servidor UDP iniciado y escuchando en puerto {port}")
         print(f"📢 IMPORTANTE: Los clientes deben conectarse a la IP de ZeroTier de este PC.")
-
+ 
         self.clients = set()
         self.ready_players = {}
 
