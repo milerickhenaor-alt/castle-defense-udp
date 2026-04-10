@@ -148,21 +148,48 @@ class GameState:
         pass
 
     def _spawn_enemies(self) -> None:
+       Para que los trolls aparezcan en pantalla y salgan de los castillos, el problema suele estar en que el Servidor es el único que debe ejecutar la lógica de "spawn" (creación), y el Cliente debe recibir esos datos para dibujarlos.
+
+Aquí tienes la solución dividida en dos partes: el ajuste en la lógica de spawn para que salgan de la posición exacta de los castillos y la verificación de por qué no los ves.
+
+1. Ajuste en GameState.py (Lógica de Spawn)
+Modifica el método _spawn_enemies para que las coordenadas X coincidan con la salida de tus castillos. Según tu configuración de castillos (-70 para A y 840 para B), ajustaremos el punto de salida:
+
+Python
+    def _spawn_enemies(self) -> None:
         now = time.time()
-        if now - self._last_spawn_time < self.enemy_spawn_interval: return
-        if len(self.enemies) >= self.max_enemies_on_screen: return
+        # Verificar si ha pasado el tiempo suficiente
+        if now - self._last_spawn_time < self.enemy_spawn_interval: 
+            return
+        
+        # Límite de enemigos para no saturar el juego
+        if len(self.enemies) >= self.max_enemies_on_screen: 
+            return
 
         self._last_spawn_time = now
-        opcion = random.randint(1, 3)
-        X_IZQ, X_DER = 180, 820
-
-        if opcion in [1, 3]:
-            tipo_a = self.enemy_types.get("A", "Troll 1")
-            self.enemies.append(EnemyFactory.create("A", X_IZQ, random.randint(350, 420), tipo_a))
         
-        if opcion in [2, 3]:
+        # Punto de salida (Spawn points)
+        # Ajustamos para que salgan justo delante del castillo
+        SPAWN_X_A = 150  # Salida del castillo A
+        SPAWN_X_B = 850  # Salida del castillo B
+        
+        # Rango aleatorio en Y para que no salgan todos en la misma línea
+        spawn_y = random.randint(350, 500)
+
+        # Decidir qué equipo saca enemigo (puedes alternar o sacar ambos)
+        opcion = random.randint(1, 3)
+
+        if opcion in [1, 3]: # Equipo A
+            tipo_a = self.enemy_types.get("A", "Troll 1")
+            nuevo_troll = EnemyFactory.create("A", SPAWN_X_A, spawn_y, tipo_a)
+            self.enemies.append(nuevo_troll)
+            print(f"DEBUG: Spawn Troll A en ({SPAWN_X_A}, {spawn_y})")
+        
+        if opcion in [2, 3]: # Equipo B
             tipo_b = self.enemy_types.get("B", "Troll 1")
-            self.enemies.append(EnemyFactory.create("B", X_DER, random.randint(350, 420), tipo_b))
+            nuevo_troll = EnemyFactory.create("B", SPAWN_X_B, spawn_y, tipo_b)
+            self.enemies.append(nuevo_troll)
+            print(f"DEBUG: Spawn Troll B en ({SPAWN_X_B}, {spawn_y})")
 
     def _update_movables(self) -> None:
         MURO_DER, MURO_IZQ = 827, 177
