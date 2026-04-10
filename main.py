@@ -4,6 +4,7 @@ from network.udp_client import UDPClient
 from view.screens.StartScreen import StartScreen
 from view.screens.GameScreen import GameScreen
 from view.screens.WaitingScreen import WaitingScreen
+from view.screens.GameOverScreen import GameOverScreen
 from model.player import Player
 from model.castle import Castle
 from model.game_state import GameState
@@ -21,10 +22,11 @@ client.send_connect()
 # Estados y Variables
 state = "start"
 mis_nombres_locales = []
-start_screen = StartScreen(screen)
-waiting_screen = WaitingScreen(screen)
-game_screen = None
-game_state = None
+start_screen    = StartScreen(screen)
+waiting_screen  = WaitingScreen(screen)
+game_over_screen = GameOverScreen(screen)
+game_screen  = None
+game_state   = None
 
 def procesar_input_local(player, controles):
     keys = pygame.key.get_pressed()
@@ -45,15 +47,13 @@ while running:
         if not message: break
         
         msg_type = message.get("type")
-        payload = message.get("payload")
+        payload  = message.get("payload")
 
         if msg_type == "start_game":
             try:
-                # Extracción segura de variantes de castillo
                 var_a = str(payload["team_a"].get("castle", "Castle 1")).split(" ")[-1]
                 var_b = str(payload["team_b"].get("castle", "Castle 2")).split(" ")[-1]
                 
-                # Crear Jugadores
                 p1 = Player(payload["team_a"]["names"][0], "A", 120, 350)
                 p2 = Player(payload["team_a"]["names"][1], "A", 120, 450)
                 p3 = Player(payload["team_b"]["names"][0], "B", 880, 350)
@@ -68,7 +68,6 @@ while running:
                     "B": payload["team_b"].get("enemy", "Troll 1")
                 }
                 
-                # Inicializar Lógica de Juego
                 game_state = GameState([p1, p2, p3, p4], castles, enemy_types)
                 game_state.local_players = set(mis_nombres_locales)
                 
@@ -86,6 +85,14 @@ while running:
         elif msg_type == "state_update" and game_state:
             game_state.update_from_server(payload)
 
+        # ← NUEVO: servidor notifica fin de juego
+        elif msg_type == "game_over" and game_state:
+            if payload.get("winner_team"):
+                game_state.winner_team = payload["winner_team"]
+            game_state.running = False
+            state = "gameover"
+            print(f"🏆 Juego terminado — ganador: {game_state.winner_team}")
+
     # --- EVENTOS ---
     for event in pygame.event.get():
         if event.type == pygame.QUIT: running = False
@@ -102,8 +109,8 @@ while running:
     # --- LÓGICA DE JUEGO ---
     if state == "game" and game_state:
         esquemas = [
-            {'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_SPACE}, 
-            {'up': pygame.K_UP, 'down': pygame.K_DOWN, 'shoot': pygame.K_RETURN}
+            {'up': pygame.K_w,  'down': pygame.K_s,    'shoot': pygame.K_SPACE}, 
+            {'up': pygame.K_UP, 'down': pygame.K_DOWN,  'shoot': pygame.K_RETURN}
         ]
         payload_envio = []
         cambio = False
@@ -116,20 +123,27 @@ while running:
                     cambio = True
                     payload_envio.append({"name": p.name, "x": p.x, "y": p.y, "action": acc})
         
-        if cambio: 
+        if cambio:
             client.send_update(payload_envio)
         
         game_state.update_client()
 
+        # ← NUEVO: detectar fin de juego localmente
+        if not game_state.running:
+            state = "gameover"
+            print(f"🏆 Juego terminado — ganador: {game_state.winner_team}")
+
     # --- DIBUJO ---
     screen.fill((0, 0, 0))
-    if state == "start": 
+    if state == "start":
         start_screen.draw()
-    elif state == "waiting": 
+    elif state == "waiting":
         waiting_screen.draw()
-    elif state == "game" and game_screen: 
+    elif state == "game" and game_screen:
         game_screen.draw(game_state)
-    
+    elif state == "gameover" and game_state:
+        game_over_screen.draw(game_state)
+
     pygame.display.flip()
 
 client.close()
