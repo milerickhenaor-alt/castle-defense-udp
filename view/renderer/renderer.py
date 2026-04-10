@@ -3,7 +3,7 @@ import os
 from view.renderer.PlayerView import PlayerView
 from view.renderer.EnemyView import EnemyView
 from view.renderer.CastleView import CastleView
-from view.renderer.ProjectileView import ProjectileView  # <--- Importamos la nueva vista
+from view.renderer.ProyectileView import ProjectileView  # <--- Importamos la nueva vista
 
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
