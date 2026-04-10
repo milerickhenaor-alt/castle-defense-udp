@@ -9,7 +9,7 @@ from view.screens.GameOverScreen import GameOverScreen # <--- Importamos tu nuev
 from model.player import Player
 from model.castle import Castle
 from model.game_state import GameState
-
+from controller.input_handler import process_input_local
 # --- CONFIGURACIÓN INICIAL ---
 pygame.init()
 WIDTH, HEIGHT = 1000, 600
@@ -116,7 +116,7 @@ while running:
         for i, nombre in enumerate(mis_nombres_locales):
             p = game_state.players.get(nombre)
             if p:
-                accion, movido = procesar_input_local(p, esquemas[i])
+                accion, movido = process_input_local(p, esquemas[i])
                 if movido or accion:
                     hubo_cambio = True
                     datos_a_enviar.append({"name": p.name, "x": p.x, "y": p.y, "action": accion})

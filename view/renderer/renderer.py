@@ -3,6 +3,7 @@ import os
 from view.renderer.PlayerView import PlayerView
 from view.renderer.EnemyView import EnemyView
 from view.renderer.CastleView import CastleView
+from view.renderer.ProjectileView import ProjectileView  # <--- Importamos la nueva vista
 
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -36,19 +37,21 @@ class Renderer:
         self.enemy_views = {}
         self.enemy_types = selections.get("enemy_types", {})
 
-    def render(self, game_state):
+        # --- Proyectiles ---
+        # Usamos una sola instancia de vista para todos los proyectiles (optimización)
+        self.projectile_view = ProjectileView()
 
-        # --- Fondo ---
+    def render(self, game_state):
+        # 1. Dibujar Fondo
         self.screen.blit(self.background, (0, 0))
 
-        # --- Castillos ---
+        # 2. Dibujar Castillos
         for team, castle in game_state.castles.items():
             if team in self.castle_views:
                 self.castle_views[team].draw(self.screen, castle)
 
-        # --- Jugadores ---
+        # 3. Dibujar Jugadores
         for player in game_state.players.values():
-
             if player.name not in self.player_views:
                 print(f"Renderer: Creando vista nueva para {player.name}")
                 self.player_views[player.name] = PlayerView(player)
@@ -57,12 +60,9 @@ class Renderer:
             view.update()
             view.draw(self.screen, player.x, player.y, player.team)
 
-        # --- Enemigos ---
+        # 4. Dibujar Enemigos
         current_enemy_ids = set()
-
-        print("👾 Enemigos recibidos:", len(game_state.enemies))
         for enemy in game_state.enemies:
-            print("Enemy:", enemy.id, enemy.x, enemy.y, enemy.type)
             current_enemy_ids.add(enemy.id)
 
             if enemy.id not in self.enemy_views:
@@ -73,13 +73,32 @@ class Renderer:
             view.update(enemy)
             view.draw(self.screen, enemy)
 
-        # 🔥 FIX IMPORTANTE: limpieza correcta SIEMPRE
+        # Limpieza de vistas de enemigos muertos/eliminados
         self.enemy_views = {
             eid: ev for eid, ev in self.enemy_views.items()
             if eid in current_enemy_ids
         }
 
+        # 5. Dibujar Proyectiles (Flechas)
+        # Se dibujan después de los enemigos para que se vean "volando" sobre ellos
+        for proj in game_state.projectiles:
+            if proj.active:
+                self.projectile_view.draw(self.screen, proj.x, proj.y, proj.team)
+
+        # 6. Dibujar Interfaz de Usuario
+        self.draw_ui(game_state)
+
     def draw_ui(self, game_state):
         font = pygame.font.SysFont("Arial", 24, bold=True)
+        
+        # Timer
         timer_text = font.render(f"Tiempo: {int(game_state.remaining_time)}s", True, (255, 255, 255))
         self.screen.blit(timer_text, (450, 20))
+        
+        # Opcional: Mostrar Scores rápidos arriba
+        score_y = 50
+        for player in game_state.players.values():
+            score_text = font.render(f"{player.name}: {player.score}", True, (255, 255, 0))
+            x_pos = 20 if player.team == "A" else 850
+            self.screen.blit(score_text, (x_pos, score_y))
+            score_y += 30
