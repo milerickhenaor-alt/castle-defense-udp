@@ -138,8 +138,7 @@ while running:
 
             game_state.update_client()
             
-        # Si el GameState local detecta fin de juego (tiempo o vida)
-        if not game_state.running:
+        if game_state and not game_state.running:
             state = "game_over"
 
     # --- 4. DIBUJO ---
