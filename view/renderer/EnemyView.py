@@ -1,42 +1,67 @@
-import os
 import pygame
-from view.renderer.SpriteLoader import SpriteLoader
+import os
+from view.renderer.PlayerView import PlayerView
+from view.renderer.EnemyView import EnemyView
+from view.renderer.CastleView import CastleView
 
-BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-class EnemyView:
-    def __init__(self, enemy):
-        # enemy.type suele ser "Troll 1" o "Troll 2"
-        self.base_path = os.path.join(BASE_PATH, "assets", "images", "enemies", enemy.type)
+class Renderer:
+    def __init__(self, screen, selections):
+        self.screen = screen
         
-        # Cargamos las dos animaciones posibles
-        self.walk_frames = SpriteLoader.load_animation(os.path.join(self.base_path, "walk"))
-        self.attack_frames = SpriteLoader.load_animation(os.path.join(self.base_path, "attack"))
-        
-        self.frame_index = 0
-        self.animation_speed = 0.15
+        # --- Fondo ---
+        try:
+            bg_path = os.path.join(BASE_PATH, "assets", "images", "background", "Background.png")
+            self.background = pygame.image.load(bg_path).convert()
+            self.background = pygame.transform.scale(self.background, (1000, 600))
+        except:
+            self.background = pygame.Surface((1000, 600))
+            self.background.fill((30, 30, 30))
 
-    def update(self, enemy):
-        # Elegir animación según el estado del modelo
-        frames = self.attack_frames if enemy.state == "attacking" else self.walk_frames
-        
-        if frames:
-            self.frame_index += self.animation_speed
-            if self.frame_index >= len(frames):
-                self.frame_index = 0
-            self.image = frames[int(self.frame_index)]
-        else:
-            # Fallback: superficie roja si no hay imágenes
-            self.image = pygame.Surface((40, 40))
-            self.image.fill((255, 0, 0))
+        # --- Jugadores ---
+        self.player_views = {}
+        if "players" in selections:
+            for p in selections["players"]:
+                self.player_views[p.name] = PlayerView(p)
 
-    def draw(self, screen, enemy):
-        # Voltear imagen si el equipo es B (vienen de la derecha)
-        img = self.image
-        if enemy.team == "B":
-            img = pygame.transform.flip(img, True, False)
-        
-        # Escalar enemigo
-        img = pygame.transform.scale(img, (60, 60))
-        rect = img.get_rect(center=(int(enemy.x), int(enemy.y)))
-        screen.blit(img, rect)
+        # --- Castillos ---
+        self.castle_views = {
+            "A": CastleView({"variant": str(selections.get("castle_a", "1"))}),
+            "B": CastleView({"variant": str(selections.get("castle_b", "1"))}),
+        }
+
+        self.enemy_views = {}
+
+    def render(self, game_state):
+        # 1. Dibujar Fondo
+        self.screen.blit(self.background, (0, 0))
+
+        # 2. Dibujar Castillos
+        for team, castle in game_state.castles.items():
+            if team in self.castle_views:
+                self.castle_views[team].draw(self.screen, castle)
+
+        # 3. Dibujar Jugadores
+        for player in game_state.players.values():
+            if player.name not in self.player_views:
+                self.player_views[player.name] = PlayerView(player)
+            
+            view = self.player_views[player.name]
+            view.update()
+            view.draw(self.screen, player.x, player.y, player.team)
+
+        # 4. Dibujar Enemigos (Monstruos)
+        current_enemy_ids = set()
+        for enemy in game_state.enemies:
+            current_enemy_ids.add(enemy.id)
+
+            if enemy.id not in self.enemy_views:
+                self.enemy_views[enemy.id] = EnemyView(enemy)
+
+            view = self.enemy_views[enemy.id]
+            view.update(enemy)
+            view.draw(self.screen, enemy)
+
+        # Limpiar vistas de enemigos que ya no están en el modelo (muertos)
+        self.enemy_views = {eid: ev for eid, ev in self.enemy_views.items() if eid in current_enemy_ids}
