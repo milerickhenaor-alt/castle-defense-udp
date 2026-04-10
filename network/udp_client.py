@@ -10,14 +10,13 @@ class UDPClient:
         self.server_address = (self.server_ip, self.server_port)
         
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(("", 0)) # Puerto aleatorio
+        self.sock.bind(("", 0)) 
         self.sock.setblocking(False)
         print(f"📡 Cliente en puerto: {self.sock.getsockname()[1]}")
 
     def send(self, message_type, payload):
         msg = {"type": message_type, "payload": payload}
         try:
-            print("📤 Enviando:", msg, "a", self.server_address)
             self.sock.sendto(json.dumps(msg).encode(), self.server_address)
         except Exception as e:
             print(f"❌ Error envío: {e}")
@@ -28,7 +27,10 @@ class UDPClient:
 
     def receive(self):
         try:
-            data, addr = self.sock.recvfrom(4096)
+            data, addr = self.sock.recvfrom(8192) # Buffer más grande por si el JSON crece
             return json.loads(data.decode()), addr
         except:
             return None, None
+
+    def close(self):
+        self.sock.close()
