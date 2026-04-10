@@ -165,11 +165,11 @@ class GameState:
 
         if opcion in [1, 3]:
             tipo = self.enemy_types.get("A", "Troll 1")
-            self.enemies.append(EnemyFactory.create("A", SPAWN_X_A, random.randint(350, 520), tipo))
+            self.enemies.append(EnemyFactory.create("A", SPAWN_X_A, random.randint(350, 450), tipo))
         
         if opcion in [2, 3]:
             tipo = self.enemy_types.get("B", "Troll 1")
-            self.enemies.append(EnemyFactory.create("B", SPAWN_X_B, random.randint(350, 520), tipo))
+            self.enemies.append(EnemyFactory.create("B", SPAWN_X_B, random.randint(350, 450), tipo))
 
     def _update_movables(self) -> None:
         # Los enemigos se mueven hacia el castillo enemigo
