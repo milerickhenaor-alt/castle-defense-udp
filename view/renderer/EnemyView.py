@@ -2,10 +2,13 @@ import os
 import pygame
 from view.renderer.SpriteLoader import SpriteLoader
 
-BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+BASE_PATH = os.getcwd()
 
 class EnemyView:
     def __init__(self, enemy, enemy_type):
+        print("📂 BASE_PATH:", BASE_PATH)
+        print("📂 EXISTE BASE_PATH:", os.path.exists(BASE_PATH))
+        print("📂 EXISTE ENEMIGOS:", os.path.exists(os.path.join(BASE_PATH, "assets")))
         self.enemy_type = enemy_type
 
         # 🔥 EXTRAER SOLO EL NÚMERO (Ej: "Troll 1" → "1")
