@@ -7,6 +7,7 @@ BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 class PlayerView:
     def __init__(self, player_data):
+        self.font = pygame.font.SysFont(None, 20)
         """
         Soporta:
         - Objeto Player (tiene atributo .name)
@@ -101,3 +102,8 @@ class PlayerView:
         # POSICIONAR CENTRADO EN LAS COORDENADAS
         rect = image_to_draw.get_rect(center=(int(x), int(y)))
         screen.blit(image_to_draw, rect)
+
+         # 🔥 NOMBRE ENCIMA DEL JUGADOR
+        name_surface = self.font.render(self.player_name, True, (255, 255, 255))
+        name_rect = name_surface.get_rect(center=(rect.centerx, rect.top - 10))
+        screen.blit(name_surface, name_rect)

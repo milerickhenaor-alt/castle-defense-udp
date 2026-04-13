@@ -72,11 +72,4 @@ class Renderer:
                 if getattr(proj, 'active', True):
                     self.projectile_view.draw(self.screen, proj.x, proj.y, proj.team)
 
-        # 6. Interfaz
-        self.draw_ui(game_state)
-
-    def draw_ui(self, game_state):
-        font = pygame.font.SysFont("Arial", 22, bold=True)
-        # Tiempo
-        timer_txt = font.render(f"Tiempo: {int(game_state.remaining_time)}s", True, (255, 255, 255))
-        self.screen.blit(timer_txt, (450, 20))
+    
