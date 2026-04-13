@@ -90,9 +90,9 @@ while running:
             running = False
         
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                disparos.add(0)  # jugador 1
             if event.key == pygame.K_f:
+                disparos.add(0)  # jugador 1
+            if event.key == pygame.K_SPACE:
                 disparos.add(1)  # jugador 2
 
         if state == "start":
