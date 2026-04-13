@@ -1,3 +1,12 @@
+"""Punto de entrada del juego Castle Defense.
+
+Maneja:
+  - Inicialización de Pygame y cliente UDP
+  - Flujo de pantallas (inicio, espera, juego, fin)
+  - Sincronización de red (envío de datos de jugador, recepción de estado)
+  - Renderizado y entrada de usuario
+"""
+
 import pygame
 import sys
 import os
@@ -11,7 +20,8 @@ from model.castle import Castle
 from model.game_state import GameState
 from controller.input_handler import process_input_local
 
-# --- CONFIGURACIÓN INICIAL ---
+# --- CONFIGURACIÓN PYGAME Y RED ---
+"""Inicializa ventana, pantalla y cliente UDP."""
 pygame.init()
 WIDTH, HEIGHT = 1000, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -21,7 +31,9 @@ clock = pygame.time.Clock()
 client = UDPClient()
 client.send_connect()
 
-# --- ESTADOS ---
+# --- MÁQUINA DE ESTADOS DEL JUEGO ---
+"""Estados posibles: 'start' (menú), 'waiting' (esperando rival),
+'game' (partida en curso), 'game_over' (fin de partida)."""
 state = "start"
 mis_nombres_locales = []
 start_screen = StartScreen(screen)
@@ -32,10 +44,13 @@ game_state = None
 
 running = True
 
+# --- BUCLE PRINCIPAL DEL JUEGO ---
+"""Ciclo a 60 FPS que maneja: red, eventos, lógica y renderizado."""
 while running:
     clock.tick(60)
 
-    # --- 1. LÓGICA DE RED ---
+    # FASE 1: RECIBIR MENSAJES DEL SERVIDOR
+    """Procesa actualizaciones de estado del juego y cambios de pantalla."""
     while True:
         message, addr = client.receive()
         if not message: break
@@ -80,7 +95,8 @@ while running:
             if not payload.get("running", True):
                 state = "game_over"
 
-    # --- 2. EVENTOS Y CONTROL ---
+    # FASE 2: PROCESAR ENTRADA DEL JUGADOR
+    # Captura teclado para movimiento y disparo
     events = pygame.event.get()
 
     # 🔥 NUEVO: detectar disparos por KEYDOWN
@@ -105,7 +121,8 @@ while running:
                 })
                 state = "waiting"
 
-    # --- 3. LÓGICA DE JUEGO ---
+    # FASE 3: ACTUALIZAR LÓGICA DEL JUEGO
+    """Sincroniza movimientos de jugadores locales y recibe estado del servidor."""
     if state == "game" and game_state:
         esquemas = [
             {'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_f},
@@ -137,7 +154,8 @@ while running:
 
         game_state.update_client()
 
-    # --- 4. DIBUJO ---
+    # FASE 4: RENDERIZAR PANTALLA
+    """Dibuja según el estado actual del juego."""
     screen.fill((0, 0, 0)) 
     if state == "start": start_screen.draw()
     elif state == "waiting": waiting_screen.draw()
@@ -146,5 +164,7 @@ while running:
     
     pygame.display.flip()
 
+# --- LIMPIEZA ---
+"""Cierra conexión y libera recursos."""
 client.close()
 pygame.quit()

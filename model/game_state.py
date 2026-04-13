@@ -1,3 +1,9 @@
+"""Estado del juego y lógica principal de Castle Defense.
+
+Define GameState, que controla jugadores, castillos, enemigos,
+proyectiles, generación de enemigos y condiciones de fin de juego.
+"""
+
 from __future__ import annotations
 import time
 import random
@@ -24,6 +30,13 @@ _ALL_EVENTS = (
 
 
 class GameState:
+    """Representa el estado completo de una partida.
+
+    Contiene jugadores, castillos, enemigos y proyectiles.
+    Incluye lógica de servidor para actualizar el juego y
+    funciones para serializar/deserializar estado en red.
+    """
+
     def __init__(
         self,
         players: List[Player],
@@ -34,6 +47,17 @@ class GameState:
         enemy_spawn_interval: float = 5.0,
         game_duration: float = 180.0
     ):
+        """Inicializa el estado de la partida.
+
+        Args:
+            players: Lista de jugadores locales y remotos.
+            castles: Diccionario de castillos por equipo.
+            enemy_types: Tipo de enemigo por equipo.
+            map_width: Ancho del área de juego.
+            map_height: Alto del área de juego.
+            enemy_spawn_interval: Tiempo entre spawn de enemigos.
+            game_duration: Duración máxima de la partida.
+        """
 
         self.players = {p.name: p for p in players}
         self.castles = castles
@@ -57,6 +81,10 @@ class GameState:
     # ---------------- SERVER LOOP ---------------- #
 
     def update_server(self):
+        """Ejecuta un ciclo de juego en el servidor.
+
+        Llama a spawn, física, colisiones y verificaciones de fin de juego.
+        """
         if not self.running:
             return
 
@@ -68,12 +96,17 @@ class GameState:
 
     # ASEGÚRATE DE QUE ESTO ESTÉ ALINEADO CON EL 'def' DE ARRIBA
     def update_client(self) -> None:
-        """Corre en el cliente."""
+        """Espacio reservado para lógica cliente si se necesita.
+
+        Actualmente solo existe la interfaz; la mayor parte de la sincronización
+        se realiza con update_from_dict() tras recibir datos del servidor.
+        """
         pass
 
     # ---------------- PROJECTILES ---------------- #
 
     def _update_projectiles(self):
+        """Actualiza posición y estado de los proyectiles."""
         for p in self.projectiles:
             if not p.active:
                 continue
@@ -88,6 +121,7 @@ class GameState:
     # ---------------- ENEMIES ---------------- #
 
     def _spawn_enemies(self):
+        """Genera nuevos enemigos periódicamente hasta el máximo permitido."""
         now = time.time()
 
         if now - self._last_spawn_time < self.enemy_spawn_interval:
@@ -116,6 +150,7 @@ class GameState:
         self.enemies = [e for e in self.enemies if e.is_alive]
 
     def _update_enemies(self):
+        """Mueve enemigos y aplica daño si alcanzan un castillo."""
         for e in self.enemies:
             if not e.is_alive:
                 continue
@@ -136,6 +171,7 @@ class GameState:
     # ---------------- COLLISIONS ---------------- #
 
     def _check_collisions(self):
+        """Detecta colisiones entre proyectiles y enemigos."""
         for proj in self.projectiles:
             if not proj.active:
                 continue
@@ -159,6 +195,7 @@ class GameState:
     # ---------------- GAME OVER ---------------- #
 
     def _check_game_over(self):
+        """Determina si la partida ha terminado por castillo destruido o tiempo."""
         # 1. Revisar castillos destruidos
         for team, castle in self.castles.items():
             if castle.hp <= 0:
@@ -187,6 +224,7 @@ class GameState:
     # ---------------- NETWORK ---------------- #
 
     def to_dict(self):
+        """Convierte el estado del juego a un diccionario serializable para red."""
         return {
             "players": [p.to_dict() for p in self.players.values()],
             "enemies": [
