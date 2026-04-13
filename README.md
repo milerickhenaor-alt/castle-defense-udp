@@ -47,9 +47,91 @@ Para garantizar que todos los jugadores vean lo mismo, el sistema sincroniza:
 - ✅ Spawn y vida de los Trolls.
 - ✅ Estado de salud de los castillos y fin de partida.
 
+## 🎮 Controles del Juego
+
+### Jugador 1 (Equipo A - Izquierda)
+| Acción | Tecla |
+| :--- | :--- |
+| **Mover Arriba** | `W` |
+| **Mover Abajo** | `S` |
+| **Disparar** | `F` |
+
+### Jugador 2 (Equipo B - Derecha)
+| Acción | Tecla |
+| :--- | :--- |
+| **Mover Arriba** | `↑` (Flecha Arriba) |
+| **Mover Abajo** | `↓` (Flecha Abajo) |
+| **Disparar** | `ESPACIO` |
+
 ---
 
-## 🛠️ Instalación y Ejecución
+## 🚀 Cómo Ejecutar
+
+### Requisitos Previos
+- Python 3.8+
+- Pip (gestor de paquetes)
+- Dos máquinas en red (o localhost para pruebas)
+
+### Instalación de Dependencias
+```bash
+pip install -r requirements.txt
+```
+O instala manualmente:
+```bash
+pip install pygame
+```
+
+### Paso 1: Iniciar el Servidor
+En una terminal (la máquina serveridora):
+```bash
+python run_server.py
+```
+Deberías ver:
+```
+🚀 SERVIDOR INICIADO EN PUERTO 5000
+Esperando conexiones...
+```
+
+### Paso 2: Configurar Clientes
+Edita `assets/config.properties` en cada máquina cliente:
+```properties
+server.ip=192.168.1.XXX     # IP de la máquina servidor
+server.port=5000             # Puerto del servidor
+```
+
+### Paso 3: Iniciar los Clientes
+En cada máquina cliente (abre 2 instancias):
+```bash
+python main.py
+```
+Espera a que ambos clientes se conecten, luego:
+1. Ingresa nombres para tus 2 jugadores
+2. Selecciona castillo y tipo de enemigo
+3. Presiona "Ready" para que ambos equipos inicien el juego
+
+---
+
+## 📦 Tecnología Utilizada
+
+| Componente | Versión | Descripción |
+| :--- | :--- | :--- |
+| **Python** | 3.8+ | Lenguaje de programación |
+| **Pygame** | 2.0+ | Motor de gráficos y eventos |
+| **Socket (stdlib)** | - | Comunicación UDP nativa de Python |
+| **JSON (stdlib)** | - | Serialización de mensajes |
+| **Time (stdlib)** | - | Gestión de tiempos y spawn |
+| **UUID (stdlib)** | - | IDs únicos para entidades |
+| **Dataclasses (stdlib)** | - | Definición de entidades |
+| **Enum (stdlib)** | - | Tipos de mensajes |
+
+### Instalación Mínima
+```bash
+pip install pygame==2.0.0
+```
+
+---
+
+## �🛠️ Instalación y Ejecución
 
 1. **Clonar el repositorio:**
    ```bash
