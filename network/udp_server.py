@@ -1,3 +1,5 @@
+"""Servidor UDP que gestiona conexiones de clientes y sincroniza el estado del juego."""
+
 import socket
 import json
 import time
@@ -8,7 +10,13 @@ from model.castle import Castle
 from model.projectile import Projectile
 
 class UDPServer:
+    """Servidor UDP no-bloqueante para Castle Defense.
+    
+    Gestiona: conexiones de clientes, sincronización de movimientos,
+    creación de GameState cuando hay 2 jugadores listos y broadcast de actualizaciones.
+    """
     def __init__(self, host="0.0.0.0", port=5000):
+        """Inicializa servidor UDP en modo no-bloqueante."""
         self.server_address = (host, port)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(self.server_address)
@@ -22,6 +30,7 @@ class UDPServer:
         self.game_state = None
 
     def receive(self):
+        """Recibe mensaje de cliente. Retorna (mensaje, dirección) o (None, None) si no hay datos."""
         try:
             data, addr = self.sock.recvfrom(4096)
             message = json.loads(data.decode())
@@ -33,16 +42,19 @@ class UDPServer:
             return None, None
 
     def send(self, message, addr):
+        """Envía mensaje JSON a cliente específico."""
         try:
             self.sock.sendto(json.dumps(message).encode(), addr)
         except Exception as e:
             print(f"❌ Error al enviar a {addr}: {e}")
 
     def broadcast(self, message):
+        """Envía mensaje a todos los clientes conectados."""
         for client in self.clients:
             self.send(message, client)
 
     def update(self):
+        """Procesa mensajes de clientes y actualiza/sincroniza el estado del juego."""
         # 1. PROCESAR MENSAJES
         while True:
             message, addr = self.receive()
