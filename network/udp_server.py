@@ -101,7 +101,7 @@ class UDPServer:
                         player.x = p_info["x"]
                         player.y = p_info["y"]
 
-                        # 🔥 CORRECCIÓN AQUÍ
+                        print("📥 Acción recibida:", p_info.get("action"))
                         if p_info.get("action") == "shoot":
                             dx = 1 if player.team == "A" else -1
 

@@ -45,7 +45,6 @@ while running:
 
         if msg_type == "start_game":
             try:
-                # Extraer variantes de castillo (ej: "Castle 1" -> "1")
                 var_a = str(payload["team_a"].get("castle", "1")).split(" ")[-1]
                 var_b = str(payload["team_b"].get("castle", "2")).split(" ")[-1]
                 
@@ -77,16 +76,25 @@ while running:
                 print(f"❌ Error al iniciar: {e}")
 
         elif msg_type == "state_update" and game_state:
-            # IMPORTANTE: Aquí es donde el cliente sincroniza con el servidor
             game_state.update_from_dict(payload)
             if not payload.get("running", True):
                 state = "game_over"
 
     # --- 2. EVENTOS Y CONTROL ---
     events = pygame.event.get()
+
+    # 🔥 NUEVO: detectar disparos por KEYDOWN
+    disparos = set()
     for event in events:
-        if event.type == pygame.QUIT: running = False
+        if event.type == pygame.QUIT:
+            running = False
         
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                disparos.add(0)  # jugador 1
+            if event.key == pygame.K_RETURN:
+                disparos.add(1)  # jugador 2
+
         if state == "start":
             if start_screen.handle_event(event):
                 mis_nombres_locales = [start_screen.player1_name, start_screen.player2_name]
@@ -97,7 +105,7 @@ while running:
                 })
                 state = "waiting"
 
-    # --- 3. LÓGICA DE JUEGO (Solo si estamos en partida) ---
+    # --- 3. LÓGICA DE JUEGO ---
     if state == "game" and game_state:
         esquemas = [
             {'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_SPACE},
@@ -111,15 +119,23 @@ while running:
             p = game_state.players.get(nombre)
             if p:
                 accion, movido = process_input_local(p, esquemas[i])
-                if movido or accion == "disparar":
-                    payload = {"name": p.name, "x": p.x, "y": p.y, "action": "shoot" if accion == "disparar" else None}
+
+                disparo = i in disparos  # 🔥 NUEVO
+
+                if movido or disparo:
+                    payload = {
+                        "name": p.name,
+                        "x": p.x,
+                        "y": p.y,
+                        "action": "shoot" if disparo else None
+                    }
                     datos_a_enviar.append(payload)
                     hubo_cambio = True
 
         if hubo_cambio:
             client.send_update(datos_a_enviar)
 
-        game_state.update_client() # Para animaciones locales
+        game_state.update_client()
 
     # --- 4. DIBUJO ---
     screen.fill((0, 0, 0)) 
