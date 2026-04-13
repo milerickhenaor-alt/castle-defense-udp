@@ -1,0 +1,142 @@
+[33m10f4575[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop[m[33m, [m[1;31morigin/develop[m[33m)[m fix: correccion saturacion9
+[33m8dbd6c4[m fix: correccion saturacion8
+[33m97aef76[m fix: correccion fps
+[33m5f4aa49[m fix: correccion saturación7
+[33ma17dbc3[m fix: correccion saturación6
+[33m584dabe[m fix: correccion saturación5
+[33m22c32db[m fix: correccion saturación4
+[33m8cca134[m fix: correccion saturación3
+[33m59350cd[m fix: correccion saturación2
+[33mdd0885b[m fix: correccion saturación
+[33m02a3433[m fix: correccion saturación
+[33ma34cebe[m fix: correccion desaparicion y oleada enemigos
+[33maab2f22[m fix: correccion desaparicion y oleada enemigos
+[33mb585d00[m fix: correccion desaparición
+[33ma109f7c[m fix: correccion mainloop
+[33m4a1ceba[m fix: correccion import disparo
+[33m6c1c894[m fix: correccion del disparo
+[33m345e064[m fix: correccion conexion
+[33mcf81b11[m fix: correccion game state
+[33m8360ce1[m fix: correccion game state
+[33m3ec7326[m fix: correccion enemy
+[33m0d6308b[m feat: readme and ignore
+[33me8a329e[m fix correccion disparo 1---
+[33mab51c82[m fix correccion disparo 1-2
+[33mcbb0137[m fix correccion disparo 1-
+[33m698383f[m fix correccion disparo 1
+[33m4d8510e[m fix correccion main updateclient
+[33md1adfc9[m fix correccion main update
+[33m1758b4e[m fix correccion main
+[33m629fc4e[m fix correccion
+[33m5066e4e[m fix: correcion proyectil
+[33m9116a41[m fix: correcion proyectil render
+[33m4debeb2[m fix: correcion proyectil
+[33mcbfe07c[m feat: proyectile fin
+[33m922ca9e[m feat: proyectiles
+[33m6493bdf[m feat: game over VIEW
+[33mf5efdb5[m feat: game over VIEW
+[33m4a3c4e7[m feat: game over VIEW
+[33m6bb2638[m feat: game over
+[33m9ca5bf6[m feat: barra de vida enemigo2
+[33m0031b76[m feat: barra de vida enemigo2
+[33mb7e839a[m feat: barra de vida enemigo2
+[33m6a78267[m feat: barra de vida enemigo
+[33md1170d6[m fix: Correcion vista enemigos
+[33mfcb2788[m fix: Correcion vista enemigos
+[33mb7927c2[m fix: Correcion vista enemigos
+[33ma31993c[m fix: Correcion vista enemigos
+[33m90f7ca7[m fix: Correcion vista enemigos
+[33m84bcb00[m fix: correccion error gamestate
+[33m32e534d[m fix: correccion error gamestate
+[33m4624e6d[m fix: correccion error enemies
+[33m86079e8[m fix: correccion error enemies
+[33me828d4a[m fix: correccion error enemies
+[33m1e77ae8[m fix: correccion error enemies
+[33m5abfbc9[m fix: correccion error
+[33m54083ee[m fix: correccion error enemy
+[33ma51ad47[m fix: correccion enemy
+[33m7035160[m fix: correccion jugador
+[33m47d8cbf[m fix: correccion jugador vista
+[33m48c79ff[m feat: conectar pantalla final y detectar condicion de game over
+[33m820f649[m feat: organizacion renderer
+[33m6f400a2[m fix: correecion game state
+[33m67cba02[m fix: correeciion run server
+[33me099401[m fix: revision de puerto
+[33md4f1ffc[m fix: correeciion udp
+[33ma3d08a6[m fix: correccion network
+[33meea0309[m fix: correcion udp
+[33m3417af7[m fix: correcion udp
+[33m2a77176[m fix: correcion udp
+[33m8c38538[m fix: correccion main
+[33m3c8a2ef[m[33m ([m[1;32mfeature/network-udp[m[33m)[m fix: correccion udp server
+[33mc77d5b7[m Merge branch 'develop' of https://github.com/milerickhenaor-alt/castle-defense-udp into develop
+[33m0f3002a[m Merge branch 'feature/network-udp' into develop
+[33me4cb55b[m feat: unifica protocolo UDP y habilita inicio de partida entre cliente y servidor
+[33m6c66eec[m Merge branch 'develop' of https://github.com/milerickhenaor-alt/castle-defense-udp into develop
+[33mc59bb41[m fix: cerrando merge y resolviendo conflictos
+[33m6d6b9ca[m Merge branch 'feature/network-udp' into develop
+[33mbd5e504[m Fix:Correccion UDP
+[33m07725a7[m fix: correccion
+[33m75f290f[m Merge branch 'feature/network-udp' into develop
+[33m5bcb5e5[m Fix:Correccion UDP
+[33mec34be9[m Feat: Agregar .properties
+[33m2c3eb0b[m Merge branch 'develop' of https://github.com/milerickhenaor-alt/castle-defense-udp into develop
+[33ma577b2b[m chore: resolver conflictos de merge entre develop y controller-loop
+[33mc9254c8[m[33m ([m[1;31morigin/feature/controller-loop[m[33m, [m[1;32mfeature/controller-loop[m[33m)[m feat: organizar ramas
+[33m8f7ad75[m feat: organizar ramas
+[33mfa0aac3[m Fix: Recupera archivos eliminados por merge
+[33me3df473[m fix: Merge feature/network-udp en develop manteniendo modelo
+[33ma9cd8c9[m feat: recuperación forzada de archivos desde model-core
+[33m3aad02d[m fix: resolver conflictos de borrado/modificación recuperando modelos
+[33m6cf6f82[m Fix:Estructura
+[33m2b94b23[m feat: merge view render
+[33mc14f0a2[m[33m ([m[1;31morigin/feature/view-render[m[33m, [m[1;32mfeature/view-render[m[33m)[m fix: limpieza definitiva de cache y archivos no deseados
+[33m86bc89e[m fix: corregir udp
+[33m57016e2[m feat: agragar propierties
+[33m0c42120[m feat: agragar propierties
+[33m529c78f[m Merge branch 'feature/view-render' of https://github.com/milerickhenaor-alt/castle-defense-udp into feature/view-render
+[33mf243280[m fix:corrección ramas
+[33m64dda41[m Fix: reorganizar logica udp
+[33mef5199a[m Fix: reorganizar logica udp
+[33m74bee43[m Fix: reorganizar logica udp
+[33mafb02ac[m[33m ([m[1;32mfeature/model-core[m[33m)[m Fix: reorganizar logica model
+[33m4ebdcdf[m Fix, reorganizar logica model
+[33mf8651d6[m Refactor Enemy and Projectile factories
+[33m9e71058[m Fix, reorganizar logica model
+[33md431456[m feat(model): implementar entidad Enemy con movimiento autónomo, daño y serialización para red
+[33mf3c6612[m feat(model): implementar clase Castle con manejo de vida, estado de destrucción y serialización
+[33m0d7cd5d[m git commit -m "feat(controller): detectar input de teclado con pygame y generar acciones del jugador"
+[33mac125a8[m feat(controller): integrar game loop con pantallas, procesamiento de input local y comunicación con servidor UD
+[33m7c3013b[m feat(controller): detectar input de teclado con pygame y generar acciones del jugador
+[33mdf645b9[m fix: correcciones sockets
+[33m0fb4f9d[m fix: correccion sincronización
+[33m4dba808[m fix: correccion udp
+[33m74daa13[m fix: correccion hud
+[33m4da69a9[m fix: correccion vista-logica enemy
+[33m8b31349[m fix: correccion conexion view-udp
+[33mbb6268f[m Update main.py
+[33md9a0d54[m Implementación del controller con manejo de input por mouse y soporte para acciones en juego 2vs2
+[33m294783a[m Merge branch 'feature/model-core' into feature/network-udp
+[33mcd84ae4[m Merge branch 'feature/controller-loop' into feature/network-udp
+[33md85d46e[m Merge branch 'feature/controller-loop' into feature/view-render
+[33md6c2024[m feat: Implementar manejo de mensajes en la clase UDPServer para gestionar conexiones y estado de jugadores
+[33mc516a21[m feat: Agregar métodos para enviar y recibir mensajes en la clase UDPClient
+[33md57430d[m feat: Agregar nuevos tipos de mensaje a la clase MessageType para la comunicación UDP
+[33m39c0e93[m fix: Correxión hud y aplicación model
+[33m653e140[m feat: implementar estructura base del controller y game loop con manejo de input
+[33m37544b8[m feat: Implementar clase UDPServer para manejo de comunicación UDP
+[33ma4787dc[m feat: Implementar cliente UDP con métodos para enviar y recibir mensajes
+[33m75fc56f[m feat: Crear archivo __init__.py para el paquete de red de implementación UDP
+[33mab0811d[m feat: Agregar clase MessageType y funciones para crear y parsear mensajes UDP
+[33m3c063b9[m Merge branch 'feature/model-core' into feature/view-render
+[33mccef275[m feat: Gestión de Dummy momentaneo
+[33m6097b82[m feat: agregar tests unitarios del modelo (45 tests)
+[33m65fcc08[m feat: implementar GameState con patron Observer y Singleton
+[33m407832e[m feat: agregar EnemyFactory y ProjectileFactory
+[33m3150742[m feat: crear clases Player, Enemy, Castle y Projectile
+[33me3ec077[m feat: agregar interfaces IDamageable, IMovable, ISerializable
+[33ma350d7d[m feat: Interfaz Inicial
+[33m4927f73[m feat(view): implement UI screens
+[33mf7ca014[m feat: implement rendering system with animations, HUD and asset management
+[33maf78cc9[m feat: add and organize sprites for UI rendering
+[33mbf2350c[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m first commit

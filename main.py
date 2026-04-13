@@ -92,7 +92,7 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 disparos.add(0)  # jugador 1
-            if event.key == pygame.K_RETURN:
+            if event.key == pygame.K_f:
                 disparos.add(1)  # jugador 2
 
         if state == "start":
@@ -108,8 +108,8 @@ while running:
     # --- 3. LÓGICA DE JUEGO ---
     if state == "game" and game_state:
         esquemas = [
-            {'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_SPACE},
-            {'up': pygame.K_UP, 'down': pygame.K_DOWN, 'shoot': pygame.K_RETURN}
+            {'up': pygame.K_w, 'down': pygame.K_s, 'shoot': pygame.K_f},
+            {'up': pygame.K_UP, 'down': pygame.K_DOWN, 'shoot': pygame.K_SPACE}
         ]
 
         datos_a_enviar = []

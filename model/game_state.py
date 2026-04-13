@@ -159,13 +159,26 @@ class GameState:
     # ---------------- GAME OVER ---------------- #
 
     def _check_game_over(self):
+        # 1. Revisar castillos destruidos
         for team, castle in self.castles.items():
             if castle.hp <= 0:
                 self.running = False
                 self.winner_team = "B" if team == "A" else "A"
+                return  # 🔥 importante: salir inmediatamente
 
+        # 2. Revisar tiempo agotado
         if self.remaining_time <= 0:
             self.running = False
+
+            score_a = sum(p.score for p in self.players.values() if p.team == "A")
+            score_b = sum(p.score for p in self.players.values() if p.team == "B")
+
+            if score_a > score_b:
+                self.winner_team = "A"
+            elif score_b > score_a:
+                self.winner_team = "B"
+            else:
+                self.winner_team = "draw"
 
     @property
     def remaining_time(self):
