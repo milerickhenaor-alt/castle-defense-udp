@@ -100,19 +100,24 @@ class UDPServer:
                     if player:
                         player.x = p_info["x"]
                         player.y = p_info["y"]
+
+                        # 🔥 CORRECCIÓN AQUÍ
                         if p_info.get("action") == "shoot":
                             dx = 1 if player.team == "A" else -1
 
                             proyectil = Projectile(
-                                owner_name=player.name,
-                                team=player.team,
                                 x=player.x,
                                 y=player.y,
+                                team=player.team,
+                                owner_name=player.name,
                                 dx=dx,
                                 dy=0
                             )
 
                             self.game_state.projectiles.append(proyectil)
+
+                            # 🧪 DEBUG (puedes quitarlo luego)
+                            print("💥 Proyectiles:", len(self.game_state.projectiles))
 
         # 2. ACTUALIZAR FÍSICA Y NOTIFICAR ESTADO
         if self.game_state:
@@ -120,5 +125,4 @@ class UDPServer:
             self.broadcast({
                 "type": "state_update",
                 "payload": self.game_state.to_dict()
-                
             })
