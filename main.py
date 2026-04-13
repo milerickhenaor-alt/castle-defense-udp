@@ -118,7 +118,7 @@ while running:
 
         if hubo_cambio:
             client.send_update(datos_a_enviar)
-        
+
         game_state.update_client() # Para animaciones locales
 
     # --- 4. DIBUJO ---

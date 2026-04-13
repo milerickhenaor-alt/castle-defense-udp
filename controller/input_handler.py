@@ -15,9 +15,10 @@ def process_input_local(player, controles):
     if keys[controles['down']] and player.y < 550:
         player.y += 5
 
-     # Acción de Disparo
-    if keys[controles['shoot']]:
-        accion = "disparar"
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            if event.key == controles['shoot']:
+                accion = "disparar"
 
     se_movio = (player.y != old_y)
     return accion, se_movio

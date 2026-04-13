@@ -1,254 +1,128 @@
-from __future__ import annotations
+import socket
+import json
 import time
-import random
-from typing import Dict, List, Optional
 
-from model.castle import Castle
-from model.enemy import Enemy
+from model.game_state import GameState
 from model.player import Player
+from model.castle import Castle
 from model.projectile import Projectile
-from model.factories import EnemyFactory
 
-# AGREGA ESTO AQUÍ (Asegúrate de que no tengan espacios a la izquierda)
-EVENT_ENEMY_KILLED    = "enemy_killed"
-EVENT_CASTLE_DAMAGED  = "castle_damaged"
-EVENT_GAME_OVER       = "game_over"
-EVENT_PROJECTILE_HIT  = "projectile_hit"
+class UDPServer:
+    def __init__(self, host="0.0.0.0", port=5000):
+        self.server_address = (host, port)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind(self.server_address)
+        self.sock.setblocking(False)
 
-_ALL_EVENTS = (
-    EVENT_ENEMY_KILLED, 
-    EVENT_CASTLE_DAMAGED, 
-    EVENT_GAME_OVER, 
-    EVENT_PROJECTILE_HIT
-)
+        print(f"🚀 SERVIDOR INICIADO EN PUERTO {port}")
+        print("Esperando conexiones...")
 
+        self.clients = set()
+        self.ready_players = {} 
+        self.game_state = None
 
-class GameState:
-    def __init__(
-        self,
-        players: List[Player],
-        castles: Dict[str, Castle],
-        enemy_types: Dict[str, str],
-        map_width: int = 1000,
-        map_height: int = 600,
-        enemy_spawn_interval: float = 5.0,
-        game_duration: float = 180.0
-    ):
+    def receive(self):
+        try:
+            data, addr = self.sock.recvfrom(4096)
+            message = json.loads(data.decode())
+            if addr not in self.clients:
+                self.clients.add(addr)
+                print(f"✨ Nuevo cliente detectado: {addr}")
+            return message, addr
+        except:
+            return None, None
 
-        self.players = {p.name: p for p in players}
-        self.castles = castles
-        self.enemy_types = enemy_types
+    def send(self, message, addr):
+        try:
+            self.sock.sendto(json.dumps(message).encode(), addr)
+        except Exception as e:
+            print(f"❌ Error al enviar a {addr}: {e}")
 
-        self.enemies: List[Enemy] = []
-        self.projectiles: List[Projectile] = []
+    def broadcast(self, message):
+        for client in self.clients:
+            self.send(message, client)
 
-        self.map_width = map_width
-        self.map_height = map_height
+    def update(self):
+        # 1. PROCESAR MENSAJES
+        while True:
+            message, addr = self.receive()
+            if message is None:
+                break
 
-        self._start_time = time.time()
-        self._last_spawn_time = 0
-        self.enemy_spawn_interval = enemy_spawn_interval
-        self.max_enemies_on_screen = 10
-        self.game_duration = game_duration
+            msg_type = message.get("type")
+            payload = message.get("payload")
 
-        self.running = True
-        self.winner_team = ""
+            if msg_type == "connect":
+                print(f"🔗 Cliente {addr} solicitó conexión")
+                self.send({"type": "connect_ack", "payload": {}}, addr)
 
-    # ---------------- SERVER LOOP ---------------- #
+            elif msg_type == "ready":
+                self.ready_players[addr] = payload
+                print(f"✅ JUGADOR LISTO: {addr}. Total listos: {len(self.ready_players)}/2")
 
-    def update_server(self):
-        if not self.running:
-            return
+                # INICIAR PARTIDA SI HAY 2
+                if len(self.ready_players) >= 2 and not self.game_state:
+                    print("🎮 ¡PARTIDA LISTA! Generando GameState...")
+                    players_data = list(self.ready_players.values())
 
-        self._spawn_enemies()
-        self._update_projectiles()
-        self._update_enemies()
-        self._check_collisions()
-        self._check_game_over()
+                    # Crear entidades
+                    p1 = Player(players_data[0]["names"][0], "A", 160, 350)
+                    p2 = Player(players_data[0]["names"][1], "A", 160, 450)
+                    p3 = Player(players_data[1]["names"][0], "B", 845, 350)
+                    p4 = Player(players_data[1]["names"][1], "B", 845, 450)
 
-    # ASEGÚRATE DE QUE ESTO ESTÉ ALINEADO CON EL 'def' DE ARRIBA
-    def update_client(self) -> None:
-        """Corre en el cliente."""
-        pass
+                    castles = {
+                        "A": Castle("A", -70, 250),
+                        "B": Castle("B", 840, 250)
+                    }
 
-    # ---------------- PROJECTILES ---------------- #
+                    enemy_types = {
+                        "A": players_data[0].get("enemy", "Troll 1"),
+                        "B": players_data[1].get("enemy", "Troll 1")
+                    }
 
-    def _update_projectiles(self):
-        for p in self.projectiles:
-            if not p.active:
-                continue
+                    self.game_state = GameState([p1, p2, p3, p4], castles, enemy_types)
+                    
+                    start_msg = {
+                        "type": "start_game",
+                        "payload": {
+                            "team_a": players_data[0],
+                            "team_b": players_data[1]
+                        }
+                    }
+                    print("📡 Enviando start_game a todos los clientes...")
+                    self.broadcast(start_msg)
 
-            p.update()
+            elif msg_type == "update" and self.game_state:
+                # Sincronización de movimiento y disparos
+                for p_info in payload:
+                    player = self.game_state.players.get(p_info["name"])
+                    if player:
+                        player.x = p_info["x"]
+                        player.y = p_info["y"]
 
-            if p.is_out_of_bounds(self.map_width, self.map_height):
-                p.deactivate()
+                        # 🔥 CORRECCIÓN AQUÍ
+                        if p_info.get("action") == "shoot":
+                            dx = 1 if player.team == "A" else -1
 
-        self.projectiles = [p for p in self.projectiles if p.active]
+                            proyectil = Projectile(
+                                x=player.x,
+                                y=player.y,
+                                team=player.team,
+                                owner_name=player.name,
+                                dx=dx,
+                                dy=0
+                            )
 
-    # ---------------- ENEMIES ---------------- #
+                            self.game_state.projectiles.append(proyectil)
 
-    def _spawn_enemies(self):
-        now = time.time()
+                            # 🧪 DEBUG (puedes quitarlo luego)
+                            print("💥 Proyectiles:", len(self.game_state.projectiles))
 
-        if now - self._last_spawn_time < self.enemy_spawn_interval:
-            return
-
-        if len(self.enemies) >= self.max_enemies_on_screen:
-            return
-
-        self._last_spawn_time = now
-
-        SPAWN_X_A = 150
-        SPAWN_X_B = 850
-
-        option = random.randint(1, 3)
-
-        if option in [1, 3]:
-            self.enemies.append(
-                EnemyFactory.create("A", SPAWN_X_A, random.randint(350, 450), "Troll 1")
-            )
-
-        if option in [2, 3]:
-            self.enemies.append(
-                EnemyFactory.create("B", SPAWN_X_B, random.randint(350, 450), "Troll 1")
-            )
-
-    def _update_enemies(self):
-        for e in self.enemies:
-            if not e.is_alive:
-                continue
-
-            if e.team == "A":
-                if e.x >= 830:
-                    self.castles["B"].take_damage(0.05)
-                    e.speed = 0
-                else:
-                    e.update()
-            else:
-                if e.x <= 170:
-                    self.castles["A"].take_damage(0.05)
-                    e.speed = 0
-                else:
-                    e.update()
-
-    # ---------------- COLLISIONS ---------------- #
-
-    def _check_collisions(self):
-        for proj in self.projectiles:
-            if not proj.active:
-                continue
-
-            for enemy in self.enemies:
-                if not enemy.is_alive:
-                    continue
-
-                if proj.team == enemy.team:
-                    continue
-
-                if proj.collides_with(enemy.x, enemy.y, 60, 60):
-                    killed = enemy.take_damage(proj.damage)
-                    proj.deactivate()
-
-                    if killed:
-                        player = self.players.get(proj.owner_name)
-                        if player:
-                            player.add_score(20)
-
-    # ---------------- GAME OVER ---------------- #
-
-    def _check_game_over(self):
-        for team, castle in self.castles.items():
-            if castle.hp <= 0:
-                self.running = False
-                self.winner_team = "B" if team == "A" else "A"
-
-        if self.remaining_time <= 0:
-            self.running = False
-
-    @property
-    def remaining_time(self):
-        return max(0.0, self.game_duration - (time.time() - self._start_time))
-
-    # ---------------- NETWORK ---------------- #
-
-    def to_dict(self):
-        return {
-            "players": [p.to_dict() for p in self.players.values()],
-            "enemies": [
-                {
-                    "id": e.id,
-                    "x": e.x,
-                    "y": e.y,
-                    "team": e.team,
-                    "type": e.type,
-                    "hp": e.hp,
-                    "state": e.state
-                }
-                for e in self.enemies
-            ],
-            "projectiles": [p.to_dict() for p in self.projectiles],
-            "castles": {t: {"hp": c.hp} for t, c in self.castles.items()},
-            "remaining_time": self.remaining_time,
-            "running": self.running,
-            "winner": self.winner_team
-        }
-    
-    # --- Agrégalo al final de la clase GameState en model/game_state.py ---
-
-    def update_from_dict(self, data: dict):
-        """Actualiza el estado local con los datos recibidos del servidor."""
-        if not data:
-            return
-
-        # 1. Actualizar Jugadores
-        for p_data in data.get("players", []):
-            name = p_data.get("name")
-            if name in self.players:
-                self.players[name].x = p_data.get("x")
-                self.players[name].y = p_data.get("y")
-                self.players[name].score = p_data.get("score", 0)
-
-        self.enemies = []
-        for e_data in data.get("enemies", []):
-            # Aquí está el truco: verifica si tu clase Enemy usa 'enemy_type' o 'type'
-            # Por lo que veo en el error, 'enemy_type' NO es el nombre correcto.
-            enemy = Enemy(
-                id=e_data["id"],
-                team=e_data["team"],
-                x=e_data["x"],
-                y=e_data["y"]
-                # Quitamos el nombre del argumento 'enemy_type=' para evitar el error
-            )
-            # Si necesitas pasarle el tipo, asígnale el valor después:
-            enemy.type = e_data.get("type", "Troll 1") 
-            enemy.hp = e_data.get("hp", 100)
-            self.enemies.append(enemy)
-
-        # 3. Actualizar Proyectiles
-        self.projectiles = []
-        for p_data in data.get("projectiles", []):
-            # Determinamos la dirección según el equipo para que no falten dx y dy
-            # Si el equipo es A, dx es 1 (derecha). Si es B, dx es -1 (izquierda).
-            d_x = 1 if p_data.get("team") == "A" else -1
-            d_y = 0 
-            
-            proj = Projectile(
-                x=p_data["x"], 
-                y=p_data["y"], 
-                team=p_data["team"], 
-                owner_name=p_data.get("owner_name", "unknown"),
-                dx=d_x,  # <--- Agregado
-                dy=d_y   # <--- Agregado
-            )
-            proj.active = p_data.get("active", True)
-            self.projectiles.append(proj)
-
-        # 4. Actualizar Castillos
-        castles_data = data.get("castles", {})
-        for team, c_data in castles_data.items():
-            if team in self.castles:
-                self.castles[team].hp = c_data.get("hp", 100)
-
-        # 5. Datos generales
-        self.running = data.get("running", True)
-        self.winner_team = data.get("winner", "")
+        # 2. ACTUALIZAR FÍSICA Y NOTIFICAR ESTADO
+        if self.game_state:
+            self.game_state.update_server()
+            self.broadcast({
+                "type": "state_update",
+                "payload": self.game_state.to_dict()
+            })
