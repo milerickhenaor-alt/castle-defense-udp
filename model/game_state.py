@@ -113,6 +113,8 @@ class GameState:
                 EnemyFactory.create("B", SPAWN_X_B, random.randint(350, 450), "Troll 1")
             )
 
+        self.enemies = [e for e in self.enemies if e.is_alive]
+
     def _update_enemies(self):
         for e in self.enemies:
             if not e.is_alive:
