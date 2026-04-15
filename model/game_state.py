@@ -194,6 +194,16 @@ class GameState:
 
     # ---------------- GAME OVER ---------------- #
 
+    @property
+    def remaining_time(self):
+        # Si el juego ya no está corriendo, el tiempo no debería seguir calculándose con time.time()
+        # Puedes añadir una variable self.end_time cuando running pase a False
+        if not self.running:
+            return getattr(self, "_frozen_time", 0.0)
+        
+        val = self.game_duration - (time.time() - self._start_time)
+        return max(0.0, val)
+
     def _check_game_over(self):
         """Determina si la partida ha terminado por castillo destruido o tiempo."""
         # 1. Revisar castillos destruidos
@@ -217,6 +227,14 @@ class GameState:
             else:
                 self.winner_team = "draw"
 
+
+    def _freeze_game(self, winner):
+        """Congela el estado actual."""
+        if self.running: # Solo ejecutar la primera vez que termina
+            self._frozen_time = self.remaining_time
+            self.running = False
+            self.winner_team = winner
+            
     @property
     def remaining_time(self):
         return max(0.0, self.game_duration - (time.time() - self._start_time))

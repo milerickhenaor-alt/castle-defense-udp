@@ -44,14 +44,17 @@ class GameOverScreen:
         self.font_large  = pygame.font.SysFont(FONT_NAME, FONT_LARGE,  bold=True)
         self.font_medium = pygame.font.SysFont(FONT_NAME, FONT_MEDIUM)
         self.font_small  = pygame.font.SysFont(FONT_NAME, FONT_SMALL)
-
+        self.btn_rect = pygame.Rect(SCREEN_WIDTH // 2 - 125, 500, 250, 45)
     # ------------------------------------------------------------------ #
     #  Eventos                                                             #
     # ------------------------------------------------------------------ #
 
-    def handle_event(self, event: pygame.event.Event) -> None:
-        """Mantiene consistencia con las otras pantallas."""
-        pass
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """Retorna True si el jugador hizo clic en el botón de reinicio."""
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.btn_rect.collidepoint(event.pos):
+                return True
+        return False
 
     # ------------------------------------------------------------------ #
     #  Dibujo principal                                                    #
@@ -88,6 +91,9 @@ class GameOverScreen:
 
         cx = SCREEN_WIDTH // 2
 
+        # --- PAUSA VISUAL: Usamos el tiempo que quedó en el game_state ---
+        elapsed = game_state.game_duration - game_state.remaining_time
+
         # ── Título ────────────────────────────────────────────────────── #
         self._draw_centered("GAME OVER", self.font_title, COLOR_USE=self.COLOR_WINNER, y=30)
 
@@ -103,6 +109,21 @@ class GameOverScreen:
             winner_color = YELLOW
 
         self._draw_centered(winner_text, self.font_large, COLOR_USE=winner_color, y=100)
+
+        # --- DIBUJAR BOTÓN DE REINICIO ---
+        mouse_pos = pygame.mouse.get_pos()
+        btn_color = self.COLOR_WINNER if self.btn_rect.collidepoint(mouse_pos) else self.COLOR_BTN
+        
+        pygame.draw.rect(self.screen, btn_color, self.btn_rect, border_radius=10)
+        pygame.draw.rect(self.screen, WHITE, self.btn_rect, 2, border_radius=10)
+        
+        txt_btn = self.font_medium.render("VOLVER AL MENÚ", True, WHITE)
+        self.screen.blit(txt_btn, (self.btn_rect.centerx - txt_btn.get_width()//2, 
+                                    self.btn_rect.centery - txt_btn.get_height()//2))
+
+        # Dibujar tiempo (estático porque elapsed ya no cambia)
+        mins, secs = int(elapsed) // 60, int(elapsed) % 60
+        self._draw_centered(f"Tiempo Final: {mins:02d}:{secs:02d}", self.font_small, GRAY, 460)
 
         # ── Línea separadora ──────────────────────────────────────────── #
         pygame.draw.line(self.screen, self.COLOR_SEPARATOR,
