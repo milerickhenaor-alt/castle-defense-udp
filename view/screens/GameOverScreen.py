@@ -35,6 +35,8 @@ class GameOverScreen:
     COLOR_WINNER    = (255, 215, 0)     # Dorado para el ganador
     COLOR_BG_TOP    = (10,  10,  30)    # Fondo degradado superior
     COLOR_SEPARATOR = (80,  80,  80)    # Línea separadora
+    COLOR_BTN = (40, 45, 60)        # <--- ESTA ES LA QUE FALTA
+    COLOR_BTN_HOVER = (60, 70, 90)  # Color cuando pasas el mouse
 
     def __init__(self, screen: pygame.Surface) -> None:
         self.screen = screen
