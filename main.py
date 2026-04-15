@@ -160,12 +160,7 @@ while running:
     if state == "start": start_screen.draw()
     elif state == "waiting": waiting_screen.draw()
     elif state == "game": game_screen.draw(game_state)
-    elif state == "game_over": game_over_screen.draw(game_state) 
-    if game_over_screen.handle_event(event):
-            state = "start"
-            game_state = None
-
-    # FASE 3: ACTUALIZAR LÓGICA
+    elif state == "game_over": game_over_screen.draw(game_state)
     
     pygame.display.flip()
 
